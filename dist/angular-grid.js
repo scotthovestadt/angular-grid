@@ -1,91 +1,200 @@
-/**
- * angular-grid - High performance and feature rich data grid for AngularJS
- * @version v1.13.0
- * @link http://www.angulargrid.com/
- * @license MIT
- */
 var awk;
 (function (awk) {
     var grid;
     (function (grid) {
-        var ColumnChangeEvent = (function () {
-            function ColumnChangeEvent(type) {
-                this.type = type;
+        var Constants = (function () {
+            function Constants() {
             }
-            ColumnChangeEvent.prototype.toString = function () {
-                var result = 'ColumnChangeEvent {type: ' + this.type;
-                if (this.column) {
-                    result += ', column: ' + this.column.colId;
-                }
-                if (this.columnGroup) {
-                    result += ', columnGroup: ' + this.columnGroup.name;
-                }
-                if (this.fromIndex) {
-                    result += ', fromIndex: ' + this.fromIndex;
-                }
-                if (this.toIndex) {
-                    result += ', toIndex: ' + this.toIndex;
-                }
-                result += '}';
-                return result;
-            };
-            ColumnChangeEvent.prototype.withColumn = function (column) {
-                this.column = column;
-                return this;
-            };
-            ColumnChangeEvent.prototype.withColumnGroup = function (columnGroup) {
-                this.columnGroup = columnGroup;
-                return this;
-            };
-            ColumnChangeEvent.prototype.withFromIndex = function (fromIndex) {
-                this.fromIndex = fromIndex;
-                return this;
-            };
-            ColumnChangeEvent.prototype.withToIndex = function (toIndex) {
-                this.toIndex = toIndex;
-                return this;
-            };
-            ColumnChangeEvent.prototype.getFromIndex = function () {
-                return this.fromIndex;
-            };
-            ColumnChangeEvent.prototype.getToIndex = function () {
-                return this.toIndex;
-            };
-            ColumnChangeEvent.prototype.getType = function () {
-                return this.type;
-            };
-            ColumnChangeEvent.prototype.getColumn = function () {
-                return this.column;
-            };
-            ColumnChangeEvent.prototype.getColumnGroup = function () {
-                return this.columnGroup;
-            };
-            ColumnChangeEvent.prototype.isPivotChanged = function () {
-                return this.type === ColumnChangeEvent.TYPE_PIVOT_CHANGE || this.type === ColumnChangeEvent.TYPE_EVERYTHING;
-            };
-            ColumnChangeEvent.prototype.isValueChanged = function () {
-                return this.type === ColumnChangeEvent.TYPE_VALUE_CHANGE || this.type === ColumnChangeEvent.TYPE_EVERYTHING;
-            };
-            ColumnChangeEvent.prototype.isIndividualColumnResized = function () {
-                return this.type === ColumnChangeEvent.TYPE_COLUMN_RESIZED && this.column !== undefined && this.column !== null;
-            };
-            /** A new set of columns has been entered, everything has potentially changed. */
-            ColumnChangeEvent.TYPE_EVERYTHING = 'everything';
-            /** A pivot column was added, removed or order changed. */
-            ColumnChangeEvent.TYPE_PIVOT_CHANGE = 'pivot';
-            /** A value column was added, removed or agg function was changed. */
-            ColumnChangeEvent.TYPE_VALUE_CHANGE = 'value';
-            /** A column was moved */
-            ColumnChangeEvent.TYPE_COLUMN_MOVED = 'columnMoved';
-            /** One or more columns was shown / hidden */
-            ColumnChangeEvent.TYPE_COLUMN_VISIBLE = 'columnVisible';
-            /** A column group was opened / closed */
-            ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED = 'columnGroupOpened';
-            /** One or more columns was resized. If just one, the column in the event is set. */
-            ColumnChangeEvent.TYPE_COLUMN_RESIZED = 'columnResized';
-            return ColumnChangeEvent;
+            Constants.STEP_EVERYTHING = 0;
+            Constants.STEP_FILTER = 1;
+            Constants.STEP_SORT = 2;
+            Constants.STEP_MAP = 3;
+            Constants.ASC = "asc";
+            Constants.DESC = "desc";
+            Constants.ROW_BUFFER_SIZE = 20;
+            Constants.MIN_COL_WIDTH = 10;
+            Constants.SUM = 'sum';
+            Constants.MIN = 'min';
+            Constants.MAX = 'max';
+            Constants.KEY_TAB = 9;
+            Constants.KEY_ENTER = 13;
+            Constants.KEY_ESCAPE = 27;
+            Constants.KEY_SPACE = 32;
+            Constants.KEY_DOWN = 40;
+            Constants.KEY_UP = 38;
+            Constants.KEY_LEFT = 37;
+            Constants.KEY_RIGHT = 39;
+            return Constants;
         })();
-        grid.ColumnChangeEvent = ColumnChangeEvent;
+        grid.Constants = Constants;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+/// <reference path="constants.ts" />
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var DEFAULT_ROW_HEIGHT = 30;
+        var constants = grid.Constants;
+        function isTrue(value) {
+            return value === true || value === 'true';
+        }
+        var GridOptionsWrapper = (function () {
+            function GridOptionsWrapper(gridOptions) {
+                this.gridOptions = gridOptions;
+                this.setupDefaults();
+                this.checkForDeprecated();
+            }
+            GridOptionsWrapper.prototype.isRowSelection = function () { return this.gridOptions.rowSelection === "single" || this.gridOptions.rowSelection === "multiple"; };
+            GridOptionsWrapper.prototype.isRowDeselection = function () { return isTrue(this.gridOptions.rowDeselection); };
+            GridOptionsWrapper.prototype.isRowSelectionMulti = function () { return this.gridOptions.rowSelection === 'multiple'; };
+            GridOptionsWrapper.prototype.getContext = function () { return this.gridOptions.context; };
+            GridOptionsWrapper.prototype.isVirtualPaging = function () { return isTrue(this.gridOptions.virtualPaging); };
+            GridOptionsWrapper.prototype.isShowToolPanel = function () { return isTrue(this.gridOptions.showToolPanel); };
+            GridOptionsWrapper.prototype.isToolPanelSuppressPivot = function () { return isTrue(this.gridOptions.toolPanelSuppressPivot); };
+            GridOptionsWrapper.prototype.isToolPanelSuppressValues = function () { return isTrue(this.gridOptions.toolPanelSuppressValues); };
+            GridOptionsWrapper.prototype.isRowsAlreadyGrouped = function () { return isTrue(this.gridOptions.rowsAlreadyGrouped); };
+            GridOptionsWrapper.prototype.isGroupSelectsChildren = function () { return isTrue(this.gridOptions.groupSelectsChildren); };
+            GridOptionsWrapper.prototype.isGroupHidePivotColumns = function () { return isTrue(this.gridOptions.groupHidePivotColumns); };
+            GridOptionsWrapper.prototype.isGroupIncludeFooter = function () { return isTrue(this.gridOptions.groupIncludeFooter); };
+            GridOptionsWrapper.prototype.isGroupSuppressBlankHeader = function () { return isTrue(this.gridOptions.groupSuppressBlankHeader); };
+            GridOptionsWrapper.prototype.isSuppressRowClickSelection = function () { return isTrue(this.gridOptions.suppressRowClickSelection); };
+            GridOptionsWrapper.prototype.isSuppressCellSelection = function () { return isTrue(this.gridOptions.suppressCellSelection); };
+            GridOptionsWrapper.prototype.isSuppressMultiSort = function () { return isTrue(this.gridOptions.suppressMultiSort); };
+            GridOptionsWrapper.prototype.isGroupSuppressAutoColumn = function () { return isTrue(this.gridOptions.groupSuppressAutoColumn); };
+            GridOptionsWrapper.prototype.isGroupHeaders = function () { return isTrue(this.gridOptions.groupHeaders); };
+            GridOptionsWrapper.prototype.isDontUseScrolls = function () { return isTrue(this.gridOptions.dontUseScrolls); };
+            GridOptionsWrapper.prototype.isSuppressHorizontalScroll = function () { return isTrue(this.gridOptions.suppressHorizontalScroll); };
+            GridOptionsWrapper.prototype.isUnSortIcon = function () { return isTrue(this.gridOptions.unSortIcon); };
+            GridOptionsWrapper.prototype.isSuppressMenuHide = function () { return isTrue(this.gridOptions.suppressMenuHide); };
+            GridOptionsWrapper.prototype.getRowStyle = function () { return this.gridOptions.rowStyle; };
+            GridOptionsWrapper.prototype.getRowClass = function () { return this.gridOptions.rowClass; };
+            GridOptionsWrapper.prototype.getHeaderCellRenderer = function () { return this.gridOptions.headerCellRenderer; };
+            GridOptionsWrapper.prototype.getApi = function () { return this.gridOptions.api; };
+            GridOptionsWrapper.prototype.isEnableColResize = function () { return isTrue(this.gridOptions.enableColResize); };
+            GridOptionsWrapper.prototype.getGroupDefaultExpanded = function () { return this.gridOptions.groupDefaultExpanded; };
+            GridOptionsWrapper.prototype.getGroupKeys = function () { return this.gridOptions.groupKeys; };
+            GridOptionsWrapper.prototype.getGroupAggFunction = function () { return this.gridOptions.groupAggFunction; };
+            GridOptionsWrapper.prototype.getGroupAggFields = function () { return this.gridOptions.groupAggFields; };
+            GridOptionsWrapper.prototype.getAllRows = function () { return this.gridOptions.rowData; };
+            GridOptionsWrapper.prototype.isGroupUseEntireRow = function () { return isTrue(this.gridOptions.groupUseEntireRow); };
+            GridOptionsWrapper.prototype.getGroupColumnDef = function () { return this.gridOptions.groupColumnDef; };
+            GridOptionsWrapper.prototype.isGroupSuppressRow = function () { return isTrue(this.gridOptions.groupSuppressRow); };
+            GridOptionsWrapper.prototype.isAngularCompileRows = function () { return isTrue(this.gridOptions.angularCompileRows); };
+            GridOptionsWrapper.prototype.isAngularCompileFilters = function () { return isTrue(this.gridOptions.angularCompileFilters); };
+            GridOptionsWrapper.prototype.isAngularCompileHeaders = function () { return isTrue(this.gridOptions.angularCompileHeaders); };
+            GridOptionsWrapper.prototype.isDebug = function () { return isTrue(this.gridOptions.debug); };
+            GridOptionsWrapper.prototype.getColumnDefs = function () { return this.gridOptions.columnDefs; };
+            GridOptionsWrapper.prototype.getRowHeight = function () { return this.gridOptions.rowHeight; };
+            GridOptionsWrapper.prototype.getBeforeFilterChanged = function () { return this.gridOptions.beforeFilterChanged; };
+            GridOptionsWrapper.prototype.getAfterFilterChanged = function () { return this.gridOptions.afterFilterChanged; };
+            GridOptionsWrapper.prototype.getFilterModified = function () { return this.gridOptions.filterModified; };
+            GridOptionsWrapper.prototype.getBeforeSortChanged = function () { return this.gridOptions.beforeSortChanged; };
+            GridOptionsWrapper.prototype.getAfterSortChanged = function () { return this.gridOptions.afterSortChanged; };
+            GridOptionsWrapper.prototype.getModelUpdated = function () { return this.gridOptions.modelUpdated; };
+            GridOptionsWrapper.prototype.getCellClicked = function () { return this.gridOptions.cellClicked; };
+            GridOptionsWrapper.prototype.getCellDoubleClicked = function () { return this.gridOptions.cellDoubleClicked; };
+            GridOptionsWrapper.prototype.getCellValueChanged = function () { return this.gridOptions.cellValueChanged; };
+            GridOptionsWrapper.prototype.getCellFocused = function () { return this.gridOptions.cellFocused; };
+            GridOptionsWrapper.prototype.getRowSelected = function () { return this.gridOptions.rowSelected; };
+            GridOptionsWrapper.prototype.getColumnResized = function () { return this.gridOptions.columnResized; };
+            GridOptionsWrapper.prototype.getColumnVisibilityChanged = function () { return this.gridOptions.columnVisibilityChanged; };
+            GridOptionsWrapper.prototype.getColumnOrderChanged = function () { return this.gridOptions.columnOrderChanged; };
+            GridOptionsWrapper.prototype.getSelectionChanged = function () { return this.gridOptions.selectionChanged; };
+            GridOptionsWrapper.prototype.getVirtualRowRemoved = function () { return this.gridOptions.virtualRowRemoved; };
+            GridOptionsWrapper.prototype.getDatasource = function () { return this.gridOptions.datasource; };
+            GridOptionsWrapper.prototype.getReady = function () { return this.gridOptions.ready; };
+            GridOptionsWrapper.prototype.getRowBuffer = function () { return this.gridOptions.rowBuffer; };
+            GridOptionsWrapper.prototype.isEnableSorting = function () { return isTrue(this.gridOptions.enableSorting) || isTrue(this.gridOptions.enableServerSideSorting); };
+            GridOptionsWrapper.prototype.isEnableCellExpressions = function () { return isTrue(this.gridOptions.enableCellExpressions); };
+            GridOptionsWrapper.prototype.isEnableServerSideSorting = function () { return isTrue(this.gridOptions.enableServerSideSorting); };
+            GridOptionsWrapper.prototype.isEnableFilter = function () { return isTrue(this.gridOptions.enableFilter) || isTrue(this.gridOptions.enableServerSideFilter); };
+            GridOptionsWrapper.prototype.isEnableServerSideFilter = function () { return this.gridOptions.enableServerSideFilter; };
+            GridOptionsWrapper.prototype.isSuppressScrollLag = function () { return isTrue(this.gridOptions.suppressScrollLag); };
+            GridOptionsWrapper.prototype.setSelectedRows = function (newSelectedRows) { return this.gridOptions.selectedRows = newSelectedRows; };
+            GridOptionsWrapper.prototype.setSelectedNodesById = function (newSelectedNodes) { return this.gridOptions.selectedNodesById = newSelectedNodes; };
+            GridOptionsWrapper.prototype.getIcons = function () { return this.gridOptions.icons; };
+            GridOptionsWrapper.prototype.getIsScrollLag = function () { return this.gridOptions.isScrollLag; };
+            GridOptionsWrapper.prototype.getSortingOrder = function () { return this.gridOptions.sortingOrder; };
+            GridOptionsWrapper.prototype.getSlaveGrids = function () { return this.gridOptions.slaveGrids; };
+            GridOptionsWrapper.prototype.getGroupRowRenderer = function () { return this.gridOptions.groupRowRenderer; };
+            GridOptionsWrapper.prototype.getGroupRowInnerRenderer = function () {
+                if (this.gridOptions.groupInnerRenderer) {
+                    console.warn('ag-grid: as of v1.10.0 (21st Jun 2015) groupInnerRenderer is now called groupRowInnerRenderer. Please change you code as groupInnerRenderer is deprecated.');
+                    return this.gridOptions.groupInnerRenderer;
+                }
+                else {
+                    return this.gridOptions.groupRowInnerRenderer;
+                }
+            };
+            GridOptionsWrapper.prototype.getColWidth = function () {
+                if (typeof this.gridOptions.colWidth !== 'number' || this.gridOptions.colWidth < constants.MIN_COL_WIDTH) {
+                    return 200;
+                }
+                else {
+                    return this.gridOptions.colWidth;
+                }
+            };
+            GridOptionsWrapper.prototype.getHeaderHeight = function () {
+                if (typeof this.gridOptions.headerHeight === 'number') {
+                    // if header height provided, used it
+                    return this.gridOptions.headerHeight;
+                }
+                else {
+                    // otherwise return 25 if no grouping, 50 if grouping
+                    if (this.isGroupHeaders()) {
+                        return 50;
+                    }
+                    else {
+                        return 25;
+                    }
+                }
+            };
+            GridOptionsWrapper.prototype.setupDefaults = function () {
+                if (!this.gridOptions.rowHeight) {
+                    this.gridOptions.rowHeight = DEFAULT_ROW_HEIGHT;
+                }
+            };
+            GridOptionsWrapper.prototype.checkForDeprecated = function () {
+                // casting to generic object, so typescript compiles even though
+                // we are looking for attributes that don't exist
+                var options = this.gridOptions;
+                if (options.suppressUnSort) {
+                    console.warn('ag-grid: as of v1.12.4 suppressUnSort is not used. Please use sortOrder instead.');
+                }
+                if (options.suppressDescSort) {
+                    console.warn('ag-grid: as of v1.12.4 suppressDescSort is not used. Please use sortOrder instead.');
+                }
+            };
+            GridOptionsWrapper.prototype.getPinnedColCount = function () {
+                // if not using scrolls, then pinned columns doesn't make
+                // sense, so always return 0
+                if (this.isDontUseScrolls()) {
+                    return 0;
+                }
+                if (this.gridOptions.pinnedColumnCount) {
+                    //in case user puts in a string, cast to number
+                    return Number(this.gridOptions.pinnedColumnCount);
+                }
+                else {
+                    return 0;
+                }
+            };
+            GridOptionsWrapper.prototype.getLocaleTextFunc = function () {
+                var that = this;
+                return function (key, defaultValue) {
+                    var localeText = that.gridOptions.localeText;
+                    if (localeText && localeText[key]) {
+                        return localeText[key];
+                    }
+                    else {
+                        return defaultValue;
+                    }
+                };
+            };
+            return GridOptionsWrapper;
+        })();
+        grid.GridOptionsWrapper = GridOptionsWrapper;
     })(grid = awk.grid || (awk.grid = {}));
 })(awk || (awk = {}));
 var awk;
@@ -177,12 +286,14 @@ var awk;
             //Returns true if it is a DOM node
             //taken from: http://stackoverflow.com/questions/384286/javascript-isdom-how-do-you-check-if-a-javascript-object-is-a-dom-object
             Utils.isNode = function (o) {
-                return (typeof Node === "object" ? o instanceof Node : o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName === "string");
+                return (typeof Node === "object" ? o instanceof Node :
+                    o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName === "string");
             };
             //Returns true if it is a DOM element
             //taken from: http://stackoverflow.com/questions/384286/javascript-isdom-how-do-you-check-if-a-javascript-object-is-a-dom-object
             Utils.isElement = function (o) {
-                return (typeof HTMLElement === "object" ? o instanceof HTMLElement : o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName === "string");
+                return (typeof HTMLElement === "object" ? o instanceof HTMLElement :
+                    o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName === "string");
             };
             Utils.isNodeOrElement = function (o) {
                 return this.isNode(o) || this.isElement(o);
@@ -431,1329 +542,6 @@ var awk;
         grid.Utils = Utils;
     })(grid = awk.grid || (awk.grid = {}));
 })(awk || (awk = {}));
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var Constants = (function () {
-            function Constants() {
-            }
-            Constants.STEP_EVERYTHING = 0;
-            Constants.STEP_FILTER = 1;
-            Constants.STEP_SORT = 2;
-            Constants.STEP_MAP = 3;
-            Constants.ASC = "asc";
-            Constants.DESC = "desc";
-            Constants.ROW_BUFFER_SIZE = 20;
-            Constants.MIN_COL_WIDTH = 10;
-            Constants.SUM = 'sum';
-            Constants.MIN = 'min';
-            Constants.MAX = 'max';
-            Constants.KEY_TAB = 9;
-            Constants.KEY_ENTER = 13;
-            Constants.KEY_SPACE = 32;
-            Constants.KEY_DOWN = 40;
-            Constants.KEY_UP = 38;
-            Constants.KEY_LEFT = 37;
-            Constants.KEY_RIGHT = 39;
-            return Constants;
-        })();
-        grid.Constants = Constants;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-/// <reference path="../constants.ts" />
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var constants = grid.Constants;
-        var Column = (function () {
-            function Column(colDef, actualWidth) {
-                this.colDef = colDef;
-                this.actualWidth = actualWidth;
-                this.visible = !colDef.hide;
-                this.sort = colDef.sort;
-                this.sortedAt = colDef.sortedAt;
-                // in the future, the colKey might be something other than the index
-                if (colDef.colId) {
-                    this.colId = colDef.colId;
-                }
-                else if (colDef.field) {
-                    this.colId = colDef.field;
-                }
-                else {
-                    this.colId = '' + Column.colIdSequence++;
-                }
-            }
-            Column.prototype.isGreaterThanMax = function (width) {
-                if (this.colDef.maxWidth >= constants.MIN_COL_WIDTH) {
-                    return width > this.colDef.maxWidth;
-                }
-                else {
-                    return false;
-                }
-            };
-            Column.prototype.getMinimumWidth = function () {
-                if (this.colDef.minWidth > constants.MIN_COL_WIDTH) {
-                    return this.colDef.minWidth;
-                }
-                else {
-                    return constants.MIN_COL_WIDTH;
-                }
-            };
-            Column.prototype.setMinimum = function () {
-                this.actualWidth = this.getMinimumWidth();
-            };
-            Column.colIdSequence = 0;
-            return Column;
-        })();
-        grid.Column = Column;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var ColumnGroup = (function () {
-            function ColumnGroup(pinned, name) {
-                this.allColumns = [];
-                this.displayedColumns = [];
-                this.expandable = false;
-                this.expanded = false;
-                this.pinned = pinned;
-                this.name = name;
-            }
-            ColumnGroup.prototype.getMinimumWidth = function () {
-                var result = 0;
-                this.displayedColumns.forEach(function (column) {
-                    result += column.getMinimumWidth();
-                });
-                return result;
-            };
-            ColumnGroup.prototype.addColumn = function (column) {
-                this.allColumns.push(column);
-            };
-            // need to check that this group has at least one col showing when both expanded and contracted.
-            // if not, then we don't allow expanding and contracting on this group
-            ColumnGroup.prototype.calculateExpandable = function () {
-                // want to make sure the group doesn't disappear when it's open
-                var atLeastOneShowingWhenOpen = false;
-                // want to make sure the group doesn't disappear when it's closed
-                var atLeastOneShowingWhenClosed = false;
-                // want to make sure the group has something to show / hide
-                var atLeastOneChangeable = false;
-                for (var i = 0, j = this.allColumns.length; i < j; i++) {
-                    var column = this.allColumns[i];
-                    if (column.colDef.headerGroupShow === 'open') {
-                        atLeastOneShowingWhenOpen = true;
-                        atLeastOneChangeable = true;
-                    }
-                    else if (column.colDef.headerGroupShow === 'closed') {
-                        atLeastOneShowingWhenClosed = true;
-                        atLeastOneChangeable = true;
-                    }
-                    else {
-                        atLeastOneShowingWhenOpen = true;
-                        atLeastOneShowingWhenClosed = true;
-                    }
-                }
-                this.expandable = atLeastOneShowingWhenOpen && atLeastOneShowingWhenClosed && atLeastOneChangeable;
-            };
-            ColumnGroup.prototype.calculateActualWidth = function () {
-                var actualWidth = 0;
-                this.displayedColumns.forEach(function (column) {
-                    actualWidth += column.actualWidth;
-                });
-                this.actualWidth = actualWidth;
-            };
-            ColumnGroup.prototype.calculateDisplayedColumns = function () {
-                // clear out last time we calculated
-                this.displayedColumns = [];
-                // it not expandable, everything is visible
-                if (!this.expandable) {
-                    this.displayedColumns = this.allColumns;
-                    return;
-                }
-                for (var i = 0, j = this.allColumns.length; i < j; i++) {
-                    var column = this.allColumns[i];
-                    switch (column.colDef.headerGroupShow) {
-                        case 'open':
-                            // when set to open, only show col if group is open
-                            if (this.expanded) {
-                                this.displayedColumns.push(column);
-                            }
-                            break;
-                        case 'closed':
-                            // when set to open, only show col if group is open
-                            if (!this.expanded) {
-                                this.displayedColumns.push(column);
-                            }
-                            break;
-                        default:
-                            // default is always show the column
-                            this.displayedColumns.push(column);
-                            break;
-                    }
-                }
-            };
-            // should replace with utils method 'add all'
-            ColumnGroup.prototype.addToVisibleColumns = function (colsToAdd) {
-                for (var i = 0; i < this.displayedColumns.length; i++) {
-                    var column = this.displayedColumns[i];
-                    colsToAdd.push(column);
-                }
-            };
-            return ColumnGroup;
-        })();
-        grid.ColumnGroup = ColumnGroup;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-/// <reference path="constants.ts" />
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var DEFAULT_ROW_HEIGHT = 30;
-        var constants = grid.Constants;
-        function isTrue(value) {
-            return value === true || value === 'true';
-        }
-        var GridOptionsWrapper = (function () {
-            function GridOptionsWrapper(gridOptions) {
-                this.gridOptions = gridOptions;
-                this.setupDefaults();
-                this.checkForDeprecated();
-            }
-            GridOptionsWrapper.prototype.isRowSelection = function () {
-                return this.gridOptions.rowSelection === "single" || this.gridOptions.rowSelection === "multiple";
-            };
-            GridOptionsWrapper.prototype.isRowDeselection = function () {
-                return isTrue(this.gridOptions.rowDeselection);
-            };
-            GridOptionsWrapper.prototype.isRowSelectionMulti = function () {
-                return this.gridOptions.rowSelection === 'multiple';
-            };
-            GridOptionsWrapper.prototype.getContext = function () {
-                return this.gridOptions.context;
-            };
-            GridOptionsWrapper.prototype.isVirtualPaging = function () {
-                return isTrue(this.gridOptions.virtualPaging);
-            };
-            GridOptionsWrapper.prototype.isShowToolPanel = function () {
-                return isTrue(this.gridOptions.showToolPanel);
-            };
-            GridOptionsWrapper.prototype.isToolPanelSuppressPivot = function () {
-                return isTrue(this.gridOptions.toolPanelSuppressPivot);
-            };
-            GridOptionsWrapper.prototype.isToolPanelSuppressValues = function () {
-                return isTrue(this.gridOptions.toolPanelSuppressValues);
-            };
-            GridOptionsWrapper.prototype.isRowsAlreadyGrouped = function () {
-                return isTrue(this.gridOptions.rowsAlreadyGrouped);
-            };
-            GridOptionsWrapper.prototype.isGroupSelectsChildren = function () {
-                return isTrue(this.gridOptions.groupSelectsChildren);
-            };
-            GridOptionsWrapper.prototype.isGroupHidePivotColumns = function () {
-                return isTrue(this.gridOptions.groupHidePivotColumns);
-            };
-            GridOptionsWrapper.prototype.isGroupIncludeFooter = function () {
-                return isTrue(this.gridOptions.groupIncludeFooter);
-            };
-            GridOptionsWrapper.prototype.isGroupSuppressBlankHeader = function () {
-                return isTrue(this.gridOptions.groupSuppressBlankHeader);
-            };
-            GridOptionsWrapper.prototype.isSuppressRowClickSelection = function () {
-                return isTrue(this.gridOptions.suppressRowClickSelection);
-            };
-            GridOptionsWrapper.prototype.isSuppressCellSelection = function () {
-                return isTrue(this.gridOptions.suppressCellSelection);
-            };
-            GridOptionsWrapper.prototype.isSuppressMultiSort = function () {
-                return isTrue(this.gridOptions.suppressMultiSort);
-            };
-            GridOptionsWrapper.prototype.isGroupSuppressAutoColumn = function () {
-                return isTrue(this.gridOptions.groupSuppressAutoColumn);
-            };
-            GridOptionsWrapper.prototype.isGroupHeaders = function () {
-                return isTrue(this.gridOptions.groupHeaders);
-            };
-            GridOptionsWrapper.prototype.isDontUseScrolls = function () {
-                return isTrue(this.gridOptions.dontUseScrolls);
-            };
-            GridOptionsWrapper.prototype.isSuppressHorizontalScroll = function () {
-                return isTrue(this.gridOptions.suppressHorizontalScroll);
-            };
-            GridOptionsWrapper.prototype.isUnSortIcon = function () {
-                return isTrue(this.gridOptions.unSortIcon);
-            };
-            GridOptionsWrapper.prototype.isSuppressMenuHide = function () {
-                return isTrue(this.gridOptions.suppressMenuHide);
-            };
-            GridOptionsWrapper.prototype.getRowStyle = function () {
-                return this.gridOptions.rowStyle;
-            };
-            GridOptionsWrapper.prototype.getRowClass = function () {
-                return this.gridOptions.rowClass;
-            };
-            GridOptionsWrapper.prototype.getHeaderCellRenderer = function () {
-                return this.gridOptions.headerCellRenderer;
-            };
-            GridOptionsWrapper.prototype.getApi = function () {
-                return this.gridOptions.api;
-            };
-            GridOptionsWrapper.prototype.isEnableColResize = function () {
-                return isTrue(this.gridOptions.enableColResize);
-            };
-            GridOptionsWrapper.prototype.getGroupDefaultExpanded = function () {
-                return this.gridOptions.groupDefaultExpanded;
-            };
-            GridOptionsWrapper.prototype.getGroupKeys = function () {
-                return this.gridOptions.groupKeys;
-            };
-            GridOptionsWrapper.prototype.getGroupAggFunction = function () {
-                return this.gridOptions.groupAggFunction;
-            };
-            GridOptionsWrapper.prototype.getGroupAggFields = function () {
-                return this.gridOptions.groupAggFields;
-            };
-            GridOptionsWrapper.prototype.getAllRows = function () {
-                return this.gridOptions.rowData;
-            };
-            GridOptionsWrapper.prototype.isGroupUseEntireRow = function () {
-                return isTrue(this.gridOptions.groupUseEntireRow);
-            };
-            GridOptionsWrapper.prototype.getGroupColumnDef = function () {
-                return this.gridOptions.groupColumnDef;
-            };
-            GridOptionsWrapper.prototype.isGroupSuppressRow = function () {
-                return isTrue(this.gridOptions.groupSuppressRow);
-            };
-            GridOptionsWrapper.prototype.isAngularCompileRows = function () {
-                return isTrue(this.gridOptions.angularCompileRows);
-            };
-            GridOptionsWrapper.prototype.isAngularCompileFilters = function () {
-                return isTrue(this.gridOptions.angularCompileFilters);
-            };
-            GridOptionsWrapper.prototype.isAngularCompileHeaders = function () {
-                return isTrue(this.gridOptions.angularCompileHeaders);
-            };
-            GridOptionsWrapper.prototype.isDebug = function () {
-                return isTrue(this.gridOptions.debug);
-            };
-            GridOptionsWrapper.prototype.getColumnDefs = function () {
-                return this.gridOptions.columnDefs;
-            };
-            GridOptionsWrapper.prototype.getRowHeight = function () {
-                return this.gridOptions.rowHeight;
-            };
-            GridOptionsWrapper.prototype.getBeforeFilterChanged = function () {
-                return this.gridOptions.beforeFilterChanged;
-            };
-            GridOptionsWrapper.prototype.getAfterFilterChanged = function () {
-                return this.gridOptions.afterFilterChanged;
-            };
-            GridOptionsWrapper.prototype.getFilterModified = function () {
-                return this.gridOptions.filterModified;
-            };
-            GridOptionsWrapper.prototype.getBeforeSortChanged = function () {
-                return this.gridOptions.beforeSortChanged;
-            };
-            GridOptionsWrapper.prototype.getAfterSortChanged = function () {
-                return this.gridOptions.afterSortChanged;
-            };
-            GridOptionsWrapper.prototype.getModelUpdated = function () {
-                return this.gridOptions.modelUpdated;
-            };
-            GridOptionsWrapper.prototype.getCellClicked = function () {
-                return this.gridOptions.cellClicked;
-            };
-            GridOptionsWrapper.prototype.getCellDoubleClicked = function () {
-                return this.gridOptions.cellDoubleClicked;
-            };
-            GridOptionsWrapper.prototype.getCellValueChanged = function () {
-                return this.gridOptions.cellValueChanged;
-            };
-            GridOptionsWrapper.prototype.getCellFocused = function () {
-                return this.gridOptions.cellFocused;
-            };
-            GridOptionsWrapper.prototype.getRowSelected = function () {
-                return this.gridOptions.rowSelected;
-            };
-            GridOptionsWrapper.prototype.getColumnResized = function () {
-                return this.gridOptions.columnResized;
-            };
-            GridOptionsWrapper.prototype.getColumnVisibilityChanged = function () {
-                return this.gridOptions.columnVisibilityChanged;
-            };
-            GridOptionsWrapper.prototype.getColumnOrderChanged = function () {
-                return this.gridOptions.columnOrderChanged;
-            };
-            GridOptionsWrapper.prototype.getSelectionChanged = function () {
-                return this.gridOptions.selectionChanged;
-            };
-            GridOptionsWrapper.prototype.getVirtualRowRemoved = function () {
-                return this.gridOptions.virtualRowRemoved;
-            };
-            GridOptionsWrapper.prototype.getDatasource = function () {
-                return this.gridOptions.datasource;
-            };
-            GridOptionsWrapper.prototype.getReady = function () {
-                return this.gridOptions.ready;
-            };
-            GridOptionsWrapper.prototype.getRowBuffer = function () {
-                return this.gridOptions.rowBuffer;
-            };
-            GridOptionsWrapper.prototype.isEnableSorting = function () {
-                return isTrue(this.gridOptions.enableSorting) || isTrue(this.gridOptions.enableServerSideSorting);
-            };
-            GridOptionsWrapper.prototype.isEnableCellExpressions = function () {
-                return isTrue(this.gridOptions.enableCellExpressions);
-            };
-            GridOptionsWrapper.prototype.isEnableServerSideSorting = function () {
-                return isTrue(this.gridOptions.enableServerSideSorting);
-            };
-            GridOptionsWrapper.prototype.isEnableFilter = function () {
-                return isTrue(this.gridOptions.enableFilter) || isTrue(this.gridOptions.enableServerSideFilter);
-            };
-            GridOptionsWrapper.prototype.isEnableServerSideFilter = function () {
-                return this.gridOptions.enableServerSideFilter;
-            };
-            GridOptionsWrapper.prototype.isSuppressScrollLag = function () {
-                return isTrue(this.gridOptions.suppressScrollLag);
-            };
-            GridOptionsWrapper.prototype.setSelectedRows = function (newSelectedRows) {
-                return this.gridOptions.selectedRows = newSelectedRows;
-            };
-            GridOptionsWrapper.prototype.setSelectedNodesById = function (newSelectedNodes) {
-                return this.gridOptions.selectedNodesById = newSelectedNodes;
-            };
-            GridOptionsWrapper.prototype.getIcons = function () {
-                return this.gridOptions.icons;
-            };
-            GridOptionsWrapper.prototype.getIsScrollLag = function () {
-                return this.gridOptions.isScrollLag;
-            };
-            GridOptionsWrapper.prototype.getSortingOrder = function () {
-                return this.gridOptions.sortingOrder;
-            };
-            GridOptionsWrapper.prototype.getSlaveGrids = function () {
-                return this.gridOptions.slaveGrids;
-            };
-            GridOptionsWrapper.prototype.getGroupRowRenderer = function () {
-                return this.gridOptions.groupRowRenderer;
-            };
-            GridOptionsWrapper.prototype.getGroupRowInnerRenderer = function () {
-                if (this.gridOptions.groupInnerRenderer) {
-                    console.warn('ag-grid: as of v1.10.0 (21st Jun 2015) groupInnerRenderer is now called groupRowInnerRenderer. Please change you code as groupInnerRenderer is deprecated.');
-                    return this.gridOptions.groupInnerRenderer;
-                }
-                else {
-                    return this.gridOptions.groupRowInnerRenderer;
-                }
-            };
-            GridOptionsWrapper.prototype.getColWidth = function () {
-                if (typeof this.gridOptions.colWidth !== 'number' || this.gridOptions.colWidth < constants.MIN_COL_WIDTH) {
-                    return 200;
-                }
-                else {
-                    return this.gridOptions.colWidth;
-                }
-            };
-            GridOptionsWrapper.prototype.getHeaderHeight = function () {
-                if (typeof this.gridOptions.headerHeight === 'number') {
-                    // if header height provided, used it
-                    return this.gridOptions.headerHeight;
-                }
-                else {
-                    // otherwise return 25 if no grouping, 50 if grouping
-                    if (this.isGroupHeaders()) {
-                        return 50;
-                    }
-                    else {
-                        return 25;
-                    }
-                }
-            };
-            GridOptionsWrapper.prototype.setupDefaults = function () {
-                if (!this.gridOptions.rowHeight) {
-                    this.gridOptions.rowHeight = DEFAULT_ROW_HEIGHT;
-                }
-            };
-            GridOptionsWrapper.prototype.checkForDeprecated = function () {
-                // casting to generic object, so typescript compiles even though
-                // we are looking for attributes that don't exist
-                var options = this.gridOptions;
-                if (options.suppressUnSort) {
-                    console.warn('ag-grid: as of v1.12.4 suppressUnSort is not used. Please use sortOrder instead.');
-                }
-                if (options.suppressDescSort) {
-                    console.warn('ag-grid: as of v1.12.4 suppressDescSort is not used. Please use sortOrder instead.');
-                }
-            };
-            GridOptionsWrapper.prototype.getPinnedColCount = function () {
-                // if not using scrolls, then pinned columns doesn't make
-                // sense, so always return 0
-                if (this.isDontUseScrolls()) {
-                    return 0;
-                }
-                if (this.gridOptions.pinnedColumnCount) {
-                    //in case user puts in a string, cast to number
-                    return Number(this.gridOptions.pinnedColumnCount);
-                }
-                else {
-                    return 0;
-                }
-            };
-            GridOptionsWrapper.prototype.getLocaleTextFunc = function () {
-                var that = this;
-                return function (key, defaultValue) {
-                    var localeText = that.gridOptions.localeText;
-                    if (localeText && localeText[key]) {
-                        return localeText[key];
-                    }
-                    else {
-                        return defaultValue;
-                    }
-                };
-            };
-            return GridOptionsWrapper;
-        })();
-        grid.GridOptionsWrapper = GridOptionsWrapper;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var LoggerFactory = (function () {
-            function LoggerFactory(logging) {
-                this.logging = logging;
-            }
-            LoggerFactory.prototype.create = function (name) {
-                return new Logger(name, this.logging);
-            };
-            return LoggerFactory;
-        })();
-        grid.LoggerFactory = LoggerFactory;
-        var Logger = (function () {
-            function Logger(name, logging) {
-                this.name = name;
-                this.logging = logging;
-            }
-            Logger.prototype.log = function (message) {
-                if (this.logging) {
-                    console.log(this.name + " " + message);
-                }
-            };
-            return Logger;
-        })();
-        grid.Logger = Logger;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-/// <reference path="columnController.ts" />
-/// <reference path="gridOptionsWrapper.ts" />
-/// <reference path="logger.ts" />
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var MasterSlaveService = (function () {
-            function MasterSlaveService() {
-                // flag to mark if we are consuming. to avoid cyclic events (ie slave firing back to master
-                // while processing a master event) we mark this if consuming an event, and if we are, then
-                // we don't fire back any events.
-                this.consuming = false;
-            }
-            MasterSlaveService.prototype.init = function (gridOptionsWrapper, columnController, gridPanel, loggerFactory) {
-                this.gridOptionsWrapper = gridOptionsWrapper;
-                this.columnController = columnController;
-                this.gridPanel = gridPanel;
-                this.logger = loggerFactory.create('MasterSlaveService');
-            };
-            // common logic across all the fire methods
-            MasterSlaveService.prototype.fireEvent = function (callback) {
-                // if we are already consuming, then we are acting on an event from a master,
-                // so we don't cause a cyclic firing of events
-                if (this.consuming) {
-                    return;
-                }
-                // iterate through the slave grids, and pass each slave service to the callback
-                var slaveGrids = this.gridOptionsWrapper.getSlaveGrids();
-                if (slaveGrids) {
-                    slaveGrids.forEach(function (slaveGridOptions) {
-                        if (slaveGridOptions.api) {
-                            var slaveService = slaveGridOptions.api.__getMasterSlaveService();
-                            callback(slaveService);
-                        }
-                    });
-                }
-            };
-            // common logic across all consume methods. very little common logic, however extracting
-            // guarantees consistency across the methods.
-            MasterSlaveService.prototype.onEvent = function (callback) {
-                this.consuming = true;
-                callback();
-                this.consuming = false;
-            };
-            MasterSlaveService.prototype.fireColumnEvent = function (event) {
-                this.fireEvent(function (slaveService) {
-                    slaveService.onColumnEvent(event);
-                });
-            };
-            MasterSlaveService.prototype.fireHorizontalScrollEvent = function (horizontalScroll) {
-                this.fireEvent(function (slaveService) {
-                    slaveService.onScrollEvent(horizontalScroll);
-                });
-            };
-            MasterSlaveService.prototype.onScrollEvent = function (horizontalScroll) {
-                var _this = this;
-                this.onEvent(function () {
-                    _this.gridPanel.setHorizontalScrollPosition(horizontalScroll);
-                });
-            };
-            MasterSlaveService.prototype.onColumnEvent = function (event) {
-                var _this = this;
-                this.onEvent(function () {
-                    // the column in the even is from the master grid. need to
-                    // look up the equivalent from this (slave) grid
-                    var masterColumn = event.getColumn();
-                    var slaveColumn;
-                    if (masterColumn) {
-                        slaveColumn = _this.columnController.getColumn(masterColumn.colId);
-                    }
-                    // if event was with respect to a master column, that is not present in this
-                    // grid, then we ignore the event
-                    if (masterColumn && !slaveColumn) {
-                        return;
-                    }
-                    // likewise for column group
-                    var masterColumnGroup = event.getColumnGroup();
-                    var slaveColumnGroup;
-                    if (masterColumnGroup) {
-                        slaveColumnGroup = _this.columnController.getColumnGroup(masterColumnGroup.name);
-                    }
-                    if (masterColumnGroup && !slaveColumnGroup) {
-                        return;
-                    }
-                    switch (event.getType()) {
-                        case grid.ColumnChangeEvent.TYPE_COLUMN_MOVED:
-                            _this.logger.log('onColumnEvent-> processing ' + event + ' fromIndex = ' + event.getFromIndex() + ', toIndex = ' + event.getToIndex());
-                            _this.columnController.moveColumn(event.getFromIndex(), event.getToIndex());
-                            break;
-                        case grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE:
-                            _this.logger.log('onColumnEvent-> processing ' + event + ' visible = ' + masterColumn.visible);
-                            _this.columnController.setColumnVisible(slaveColumn, masterColumn.visible);
-                            break;
-                        case grid.ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED:
-                            _this.logger.log('onColumnEvent-> processing ' + event + ' expanded = ' + masterColumnGroup.expanded);
-                            _this.columnController.columnGroupOpened(slaveColumnGroup, masterColumnGroup.expanded);
-                            break;
-                        case grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED:
-                            _this.logger.log('onColumnEvent-> processing ' + event + ' actualWidth = ' + masterColumn.actualWidth);
-                            _this.columnController.setColumnWidth(slaveColumn, masterColumn.actualWidth);
-                            break;
-                    }
-                });
-            };
-            return MasterSlaveService;
-        })();
-        grid.MasterSlaveService = MasterSlaveService;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-/// <reference path="utils.ts" />
-/// <reference path="constants.ts" />
-/// <reference path="entities/column.ts" />
-/// <reference path="entities/columnGroup.ts" />
-/// <reference path="columnChangeEvent.ts" />
-/// <reference path="masterSlaveService.ts" />
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var _ = grid.Utils;
-        var constants = grid.Constants;
-        var ColumnController = (function () {
-            function ColumnController() {
-                this.setupComplete = false;
-                this.changedListeners = [];
-            }
-            ColumnController.prototype.init = function (angularGrid, selectionRendererFactory, gridOptionsWrapper, expressionService, valueService, masterSlaveController) {
-                this.gridOptionsWrapper = gridOptionsWrapper;
-                this.angularGrid = angularGrid;
-                this.selectionRendererFactory = selectionRendererFactory;
-                this.expressionService = expressionService;
-                this.valueService = valueService;
-                this.masterSlaveController = masterSlaveController;
-            };
-            ColumnController.prototype.isSetupComplete = function () {
-                return this.setupComplete;
-            };
-            // used by:
-            // + headerRenderer -> setting pinned body width
-            ColumnController.prototype.getHeaderGroups = function () {
-                return this.columnGroups;
-            };
-            // used by:
-            // + angularGrid -> setting pinned body width
-            ColumnController.prototype.getPinnedContainerWidth = function () {
-                return this.getTotalColWidth(true);
-            };
-            ColumnController.prototype.addPivotColumn = function (column) {
-                if (this.allColumns.indexOf(column) < 0) {
-                    console.warn('not a valid column: ' + column);
-                    return;
-                }
-                if (this.pivotColumns.indexOf(column) >= 0) {
-                    console.warn('column is already a value column');
-                    return;
-                }
-                this.pivotColumns.push(column);
-                // because we could be taking out 'pivot' columns, the displayed
-                // columns may differ, so need to work out all the columns again
-                this.updateModel();
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
-            };
-            ColumnController.prototype.removePivotColumn = function (column) {
-                if (this.pivotColumns.indexOf(column) < 0) {
-                    console.warn('column not a pivot');
-                    return;
-                }
-                _.removeFromArray(this.pivotColumns, column);
-                this.updateModel();
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
-            };
-            ColumnController.prototype.addValueColumn = function (column) {
-                if (this.allColumns.indexOf(column) < 0) {
-                    console.warn('not a valid column: ' + column);
-                    return;
-                }
-                if (this.valueColumns.indexOf(column) >= 0) {
-                    console.warn('column is already a value column');
-                    return;
-                }
-                if (!column.aggFunc) {
-                    column.aggFunc = constants.SUM;
-                }
-                this.valueColumns.push(column);
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
-            };
-            ColumnController.prototype.removeValueColumn = function (column) {
-                if (this.valueColumns.indexOf(column) < 0) {
-                    console.warn('column not a value');
-                    return;
-                }
-                _.removeFromArray(this.valueColumns, column);
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
-            };
-            // returns true if the col is either in all columns or visible columns.
-            // we need to check visible columns because the grouping column could come
-            // from the gridOptions, so that's a special case
-            ColumnController.prototype.doesColumnExistInGrid = function (column) {
-                var columnInAllColumns = this.allColumns.indexOf(column) >= 0;
-                var columnInVisibleColumns = this.visibleColumns.indexOf(column) >= 0;
-                return columnInAllColumns || columnInVisibleColumns;
-            };
-            ColumnController.prototype.setColumnWidth = function (column, newWidth) {
-                if (!this.doesColumnExistInGrid(column)) {
-                    console.warn('column does not exist');
-                    return;
-                }
-                if (newWidth < column.getMinimumWidth()) {
-                    newWidth = column.getMinimumWidth();
-                }
-                if (column.isGreaterThanMax(newWidth)) {
-                    newWidth = column.colDef.maxWidth;
-                }
-                // check for change first, to avoid unnecessary firing of events
-                if (column.actualWidth !== newWidth) {
-                    column.actualWidth = newWidth;
-                    // if part of a group, update the groups width
-                    this.updateGroupWidthsAfterColumnResize(column);
-                    var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED).withColumn(column);
-                    this.fireColumnChanged(event);
-                }
-                if (typeof this.gridOptionsWrapper.getColumnResized() === 'function') {
-                    this.gridOptionsWrapper.getColumnResized()(column);
-                }
-            };
-            ColumnController.prototype.updateGroupWidthsAfterColumnResize = function (column) {
-                if (this.columnGroups) {
-                    this.columnGroups.forEach(function (columnGroup) {
-                        if (columnGroup.displayedColumns.indexOf(column) >= 0) {
-                            columnGroup.calculateActualWidth();
-                        }
-                    });
-                }
-            };
-            ColumnController.prototype.setColumnAggFunction = function (column, aggFunc) {
-                column.aggFunc = aggFunc;
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
-            };
-            ColumnController.prototype.movePivotColumn = function (fromIndex, toIndex) {
-                var column = this.pivotColumns[fromIndex];
-                this.pivotColumns.splice(fromIndex, 1);
-                this.pivotColumns.splice(toIndex, 0, column);
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
-            };
-            ColumnController.prototype.moveColumn = function (fromIndex, toIndex) {
-                var column = this.allColumns[fromIndex];
-                this.allColumns.splice(fromIndex, 1);
-                this.allColumns.splice(toIndex, 0, column);
-                this.updateModel();
-                var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_MOVED).withFromIndex(fromIndex).withToIndex(toIndex);
-                this.fireColumnChanged(event);
-                if (typeof this.gridOptionsWrapper.getColumnOrderChanged() === 'function') {
-                    this.gridOptionsWrapper.getColumnOrderChanged()(this.allColumns);
-                }
-            };
-            // used by:
-            // + angularGrid -> for setting body width
-            // + rowController -> setting main row widths (when inserting and resizing)
-            ColumnController.prototype.getBodyContainerWidth = function () {
-                return this.getTotalColWidth(false);
-            };
-            // + rowController
-            ColumnController.prototype.getValueColumns = function () {
-                return this.valueColumns;
-            };
-            // + toolPanel
-            ColumnController.prototype.getGroupedColumns = function () {
-                return this.pivotColumns;
-            };
-            // + rowController -> while inserting rows, and when tabbing through cells (need to change this)
-            // need a newMethod - get next col index
-            ColumnController.prototype.getDisplayedColumns = function () {
-                return this.displayedColumns;
-            };
-            // used by:
-            // + inMemoryRowController -> sorting, building quick filter text
-            // + headerRenderer -> sorting (clearing icon)
-            ColumnController.prototype.getAllColumns = function () {
-                return this.allColumns;
-            };
-            ColumnController.prototype.setColumnVisible = function (column, visible) {
-                column.visible = visible;
-                this.updateModel();
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE).withColumn(column));
-                if (typeof this.gridOptionsWrapper.getColumnVisibilityChanged() === 'function') {
-                    this.gridOptionsWrapper.getColumnVisibilityChanged()(this.allColumns);
-                }
-            };
-            ColumnController.prototype.getVisibleColBefore = function (col) {
-                var oldIndex = this.visibleColumns.indexOf(col);
-                if (oldIndex > 0) {
-                    return this.visibleColumns[oldIndex - 1];
-                }
-                else {
-                    return null;
-                }
-            };
-            // used by:
-            // + rowRenderer -> for navigation
-            ColumnController.prototype.getVisibleColAfter = function (col) {
-                var oldIndex = this.visibleColumns.indexOf(col);
-                if (oldIndex < (this.visibleColumns.length - 1)) {
-                    return this.visibleColumns[oldIndex + 1];
-                }
-                else {
-                    return null;
-                }
-            };
-            ColumnController.prototype.isPinning = function () {
-                return this.visibleColumns && this.visibleColumns.length > 0 && this.visibleColumns[0].pinned;
-            };
-            ColumnController.prototype.getState = function () {
-                if (!this.allColumns || this.allColumns.length < 0) {
-                    return [];
-                }
-                var result = [];
-                for (var i = 0; i < this.allColumns.length; i++) {
-                    var column = this.allColumns[i];
-                    var pivotIndex = this.pivotColumns.indexOf(column);
-                    var resultItem = {
-                        colId: column.colId,
-                        hide: !column.visible,
-                        aggFunc: column.aggFunc ? column.aggFunc : null,
-                        width: column.actualWidth,
-                        pivotIndex: pivotIndex >= 0 ? pivotIndex : null
-                    };
-                    result.push(resultItem);
-                }
-                return result;
-            };
-            ColumnController.prototype.setState = function (columnState) {
-                var oldColumnList = this.allColumns;
-                this.allColumns = [];
-                this.pivotColumns = [];
-                this.valueColumns = [];
-                var that = this;
-                _.forEach(columnState, function (stateItem) {
-                    var oldColumn = _.find(oldColumnList, 'colId', stateItem.colId);
-                    if (!oldColumn) {
-                        console.warn('ag-grid: column ' + stateItem.colId + ' not found');
-                        return;
-                    }
-                    // following ensures we are left with boolean true or false, eg converts (null, undefined, 0) all to true
-                    oldColumn.visible = stateItem.hide ? false : true;
-                    // if width provided and valid, use it, otherwise stick with the old width
-                    oldColumn.actualWidth = stateItem.width >= constants.MIN_COL_WIDTH ? stateItem.width : oldColumn.actualWidth;
-                    // accept agg func only if valid
-                    var aggFuncValid = [constants.MIN, constants.MAX, constants.SUM].indexOf(stateItem.aggFunc) >= 0;
-                    if (aggFuncValid) {
-                        oldColumn.aggFunc = stateItem.aggFunc;
-                        that.valueColumns.push(oldColumn);
-                    }
-                    else {
-                        oldColumn.aggFunc = null;
-                    }
-                    // if pivot
-                    if (typeof stateItem.pivotIndex === 'number' && stateItem.pivotIndex >= 0) {
-                        that.pivotColumns.push(oldColumn);
-                    }
-                    that.allColumns.push(oldColumn);
-                    oldColumnList.splice(oldColumnList.indexOf(oldColumn), 1);
-                });
-                // anything left over, we got no data for, so add in the column as non-value, non-pivot and hidden
-                _.forEach(oldColumnList, function (oldColumn) {
-                    oldColumn.visible = false;
-                    oldColumn.aggFunc = null;
-                    that.allColumns.push(oldColumn);
-                });
-                this.pivotColumns.sort(function (colA, colB) {
-                    return colA.pivotIndex - colB.pivotIndex;
-                });
-                this.updateModel();
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_EVERYTHING));
-            };
-            ColumnController.prototype.getColumn = function (key) {
-                if (!key) {
-                    return null;
-                }
-                // need both allColumns and visibleColumns, in case the
-                // grouping column that came from the grid options
-                var listsToCheck = [this.allColumns, this.visibleColumns];
-                for (var j = 0; j < listsToCheck.length; j++) {
-                    var list = listsToCheck[j];
-                    if (!list) {
-                        continue;
-                    }
-                    for (var i = 0; i < list.length; i++) {
-                        var colDefMatches = list[i].colDef === key;
-                        var fieldMatches = list[i].colId === key;
-                        if (colDefMatches || fieldMatches) {
-                            return list[i];
-                        }
-                    }
-                }
-            };
-            ColumnController.prototype.getDisplayNameForCol = function (column) {
-                var colDef = column.colDef;
-                var headerValueGetter = colDef.headerValueGetter;
-                if (headerValueGetter) {
-                    var params = {
-                        colDef: colDef,
-                        api: this.gridOptionsWrapper.getApi(),
-                        context: this.gridOptionsWrapper.getContext()
-                    };
-                    if (typeof headerValueGetter === 'function') {
-                        // valueGetter is a function, so just call it
-                        return headerValueGetter(params);
-                    }
-                    else if (typeof headerValueGetter === 'string') {
-                        // valueGetter is an expression, so execute the expression
-                        return this.expressionService.evaluate(headerValueGetter, params);
-                    }
-                    else {
-                        console.warn('ag-grid: headerValueGetter must be a function or a string');
-                    }
-                }
-                else if (colDef.displayName) {
-                    console.warn("ag-grid: Found displayName " + colDef.displayName + ", please use headerName instead, displayName is deprecated.");
-                    return colDef.displayName;
-                }
-                else {
-                    return colDef.headerName;
-                }
-            };
-            ColumnController.prototype.addChangeListener = function (listener) {
-                this.changedListeners.push(listener);
-            };
-            ColumnController.prototype.getColumnGroup = function (name) {
-                if (!name) {
-                    return null;
-                }
-                if (this.columnGroups) {
-                    for (var i = 0; i < this.columnGroups.length; i++) {
-                        if (this.columnGroups[i].name === name) {
-                            return this.columnGroups[i];
-                        }
-                    }
-                }
-            };
-            ColumnController.prototype.fireColumnChanged = function (event) {
-                for (var i = 0; i < this.changedListeners.length; i++) {
-                    this.changedListeners[i](event);
-                }
-                this.masterSlaveController.fireColumnEvent(event);
-            };
-            // called by angularGrid
-            ColumnController.prototype.setColumns = function (columnDefs) {
-                this.checkForDeprecatedItems(columnDefs);
-                this.createColumns(columnDefs);
-                this.createPivotColumns();
-                this.createValueColumns();
-                this.updateModel();
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_EVERYTHING));
-                this.setupComplete = true;
-            };
-            ColumnController.prototype.checkForDeprecatedItems = function (columnDefs) {
-                if (columnDefs) {
-                    for (var i = 0; i < columnDefs.length; i++) {
-                        var colDef = columnDefs[i];
-                        if (colDef.group !== undefined) {
-                            console.warn('ag-grid: ' + colDef.field + ' colDef.group is deprecated, please use colDef.headerGroup');
-                            colDef.headerGroup = colDef.group;
-                        }
-                        if (colDef.groupShow !== undefined) {
-                            console.warn('ag-grid: ' + colDef.field + ' colDef.groupShow is deprecated, please use colDef.headerGroupShow');
-                            colDef.headerGroupShow = colDef.groupShow;
-                        }
-                    }
-                }
-            };
-            // called by headerRenderer - when a header is opened or closed
-            ColumnController.prototype.columnGroupOpened = function (group, newValue) {
-                group.expanded = newValue;
-                this.updateGroups();
-                this.updateDisplayedColumns();
-                var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED).withColumnGroup(group);
-                this.fireColumnChanged(event);
-            };
-            // called from API
-            ColumnController.prototype.hideColumns = function (colIds, hide) {
-                var _this = this;
-                var updatedCols = [];
-                this.allColumns.forEach(function (column) {
-                    var idThisCol = column.colId;
-                    var hideThisCol = colIds.indexOf(idThisCol) >= 0;
-                    var newVisible = !hide;
-                    if (hideThisCol && column.visible !== newVisible) {
-                        column.visible = newVisible;
-                        updatedCols.push(column);
-                    }
-                });
-                if (updatedCols.length > 0) {
-                    this.updateModel();
-                    updatedCols.forEach(function (column) {
-                        var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE).withColumn(column);
-                        _this.fireColumnChanged(event);
-                    });
-                }
-            };
-            ColumnController.prototype.updateModel = function () {
-                this.updateVisibleColumns();
-                this.updatePinnedColumns();
-                this.buildGroups();
-                this.updateGroups();
-                this.updateDisplayedColumns();
-            };
-            ColumnController.prototype.updateDisplayedColumns = function () {
-                if (!this.gridOptionsWrapper.isGroupHeaders()) {
-                    // if not grouping by headers, then pull visible cols
-                    this.displayedColumns = this.visibleColumns;
-                }
-                else {
-                    // if grouping, then only show col as per group rules
-                    this.displayedColumns = [];
-                    for (var i = 0; i < this.columnGroups.length; i++) {
-                        var group = this.columnGroups[i];
-                        group.addToVisibleColumns(this.displayedColumns);
-                    }
-                }
-            };
-            // called from api
-            ColumnController.prototype.sizeColumnsToFit = function (gridWidth) {
-                var _this = this;
-                // avoid divide by zero
-                if (gridWidth <= 0 || this.displayedColumns.length === 0) {
-                    return;
-                }
-                var colsToNotSpread = _.filter(this.displayedColumns, function (column) {
-                    return column.colDef.suppressSizeToFit === true;
-                });
-                var colsToSpread = _.filter(this.displayedColumns, function (column) {
-                    return column.colDef.suppressSizeToFit !== true;
-                });
-                var finishedResizing = false;
-                while (!finishedResizing) {
-                    finishedResizing = true;
-                    var availablePixels = gridWidth - getTotalWidth(colsToNotSpread);
-                    if (availablePixels <= 0) {
-                        // no width, set everything to minimum
-                        colsToSpread.forEach(function (column) {
-                            column.setMinimum();
-                            _this.updateGroupWidthsAfterColumnResize(column);
-                        });
-                    }
-                    else {
-                        var scale = availablePixels / getTotalWidth(colsToSpread);
-                        // we set the pixels for the last col based on what's left, as otherwise
-                        // we could be a pixel or two short or extra because of rounding errors.
-                        var pixelsForLastCol = availablePixels;
-                        for (var i = colsToSpread.length - 1; i >= 0; i--) {
-                            var column = colsToSpread[i];
-                            var newWidth = Math.round(column.actualWidth * scale);
-                            if (newWidth < column.getMinimumWidth()) {
-                                column.setMinimum();
-                                moveToNotSpread(column);
-                                finishedResizing = false;
-                            }
-                            else if (column.isGreaterThanMax(newWidth)) {
-                                column.actualWidth = column.colDef.maxWidth;
-                                moveToNotSpread(column);
-                                finishedResizing = false;
-                            }
-                            else {
-                                var onLastCol = i === 0;
-                                if (onLastCol) {
-                                    column.actualWidth = pixelsForLastCol;
-                                }
-                                else {
-                                    pixelsForLastCol -= newWidth;
-                                    column.actualWidth = newWidth;
-                                }
-                            }
-                            this.updateGroupWidthsAfterColumnResize(column);
-                        }
-                    }
-                }
-                // widths set, refresh the gui
-                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED));
-                function moveToNotSpread(column) {
-                    _.removeFromArray(colsToSpread, column);
-                    colsToNotSpread.push(column);
-                }
-                function getTotalWidth(columns) {
-                    var result = 0;
-                    for (var i = 0; i < columns.length; i++) {
-                        result += columns[i].actualWidth;
-                    }
-                    return result;
-                }
-            };
-            ColumnController.prototype.buildGroups = function () {
-                // if not grouping by headers, do nothing
-                if (!this.gridOptionsWrapper.isGroupHeaders()) {
-                    this.columnGroups = null;
-                    return;
-                }
-                // split the columns into groups
-                var currentGroup = null;
-                this.columnGroups = [];
-                var that = this;
-                var lastColWasPinned = true;
-                this.visibleColumns.forEach(function (column) {
-                    // do we need a new group, because we move from pinned to non-pinned columns?
-                    var endOfPinnedHeader = lastColWasPinned && !column.pinned;
-                    if (!column.pinned) {
-                        lastColWasPinned = false;
-                    }
-                    // do we need a new group, because the group names doesn't match from previous col?
-                    var groupKeyMismatch = currentGroup && column.colDef.headerGroup !== currentGroup.name;
-                    // we don't group columns where no group is specified
-                    var colNotInGroup = currentGroup && !currentGroup.name;
-                    // do we need a new group, because we are just starting
-                    var processingFirstCol = currentGroup === null;
-                    var newGroupNeeded = processingFirstCol || endOfPinnedHeader || groupKeyMismatch || colNotInGroup;
-                    // create new group, if it's needed
-                    if (newGroupNeeded) {
-                        var pinned = column.pinned;
-                        currentGroup = new grid.ColumnGroup(pinned, column.colDef.headerGroup);
-                        that.columnGroups.push(currentGroup);
-                    }
-                    currentGroup.addColumn(column);
-                });
-            };
-            ColumnController.prototype.updateGroups = function () {
-                // if not grouping by headers, do nothing
-                if (!this.gridOptionsWrapper.isGroupHeaders()) {
-                    return;
-                }
-                for (var i = 0; i < this.columnGroups.length; i++) {
-                    var group = this.columnGroups[i];
-                    group.calculateExpandable();
-                    group.calculateDisplayedColumns();
-                    group.calculateActualWidth();
-                }
-            };
-            ColumnController.prototype.updateVisibleColumns = function () {
-                this.visibleColumns = [];
-                // see if we need to insert the default grouping column
-                var needAGroupColumn = this.pivotColumns.length > 0 && !this.gridOptionsWrapper.isGroupSuppressAutoColumn() && !this.gridOptionsWrapper.isGroupUseEntireRow() && !this.gridOptionsWrapper.isGroupSuppressRow();
-                var localeTextFunc = this.gridOptionsWrapper.getLocaleTextFunc();
-                if (needAGroupColumn) {
-                    // if one provided by user, use it, otherwise create one
-                    var groupColDef = this.gridOptionsWrapper.getGroupColumnDef();
-                    if (!groupColDef) {
-                        groupColDef = {
-                            headerName: localeTextFunc('group', 'Group'),
-                            cellRenderer: {
-                                renderer: "group"
-                            }
-                        };
-                    }
-                    // no group column provided, need to create one here
-                    var groupColumnWidth = this.calculateColInitialWidth(groupColDef);
-                    var groupColumn = new grid.Column(groupColDef, groupColumnWidth);
-                    this.visibleColumns.push(groupColumn);
-                }
-                for (var i = 0; i < this.allColumns.length; i++) {
-                    var column = this.allColumns[i];
-                    var hideBecauseOfPivot = this.pivotColumns.indexOf(column) >= 0 && this.gridOptionsWrapper.isGroupHidePivotColumns();
-                    if (column.visible && !hideBecauseOfPivot) {
-                        column.index = this.visibleColumns.length;
-                        this.visibleColumns.push(this.allColumns[i]);
-                    }
-                }
-            };
-            ColumnController.prototype.updatePinnedColumns = function () {
-                var pinnedColumnCount = this.gridOptionsWrapper.getPinnedColCount();
-                for (var i = 0; i < this.visibleColumns.length; i++) {
-                    var pinned = i < pinnedColumnCount;
-                    this.visibleColumns[i].pinned = pinned;
-                }
-            };
-            ColumnController.prototype.createColumns = function (colDefs) {
-                this.allColumns = [];
-                if (colDefs) {
-                    for (var i = 0; i < colDefs.length; i++) {
-                        var colDef = colDefs[i];
-                        var width = this.calculateColInitialWidth(colDef);
-                        var column = new grid.Column(colDef, width);
-                        this.allColumns.push(column);
-                    }
-                }
-            };
-            ColumnController.prototype.createPivotColumns = function () {
-                this.pivotColumns = [];
-                var groupKeys = this.gridOptionsWrapper.getGroupKeys();
-                if (!groupKeys || groupKeys.length <= 0) {
-                    return;
-                }
-                for (var i = 0; i < groupKeys.length; i++) {
-                    var groupKey = groupKeys[i];
-                    var column = this.getColumn(groupKey);
-                    if (!column) {
-                        column = this.createDummyColumn(groupKey);
-                    }
-                    this.pivotColumns.push(column);
-                }
-            };
-            ColumnController.prototype.createValueColumns = function () {
-                this.valueColumns = [];
-                for (var i = 0; i < this.allColumns.length; i++) {
-                    var column = this.allColumns[i];
-                    if (column.colDef.aggFunc) {
-                        column.aggFunc = column.colDef.aggFunc;
-                        this.valueColumns.push(column);
-                    }
-                }
-            };
-            ColumnController.prototype.createDummyColumn = function (field) {
-                var colDef = {
-                    field: field,
-                    headerName: field,
-                    hide: false
-                };
-                var width = this.gridOptionsWrapper.getColWidth();
-                var column = new grid.Column(colDef, width);
-                return column;
-            };
-            ColumnController.prototype.calculateColInitialWidth = function (colDef) {
-                if (!colDef.width) {
-                    // if no width defined in colDef, use default
-                    return this.gridOptionsWrapper.getColWidth();
-                }
-                else if (colDef.width < constants.MIN_COL_WIDTH) {
-                    // if width in col def to small, set to min width
-                    return constants.MIN_COL_WIDTH;
-                }
-                else {
-                    // otherwise use the provided width
-                    return colDef.width;
-                }
-            };
-            // call with true (pinned), false (not-pinned) or undefined (all columns)
-            ColumnController.prototype.getTotalColWidth = function (includePinned) {
-                var widthSoFar = 0;
-                var pinedNotImportant = typeof includePinned !== 'boolean';
-                this.displayedColumns.forEach(function (column) {
-                    var includeThisCol = pinedNotImportant || column.pinned === includePinned;
-                    if (includeThisCol) {
-                        widthSoFar += column.actualWidth;
-                    }
-                });
-                return widthSoFar;
-            };
-            return ColumnController;
-        })();
-        grid.ColumnController = ColumnController;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
-var awk;
-(function (awk) {
-    var grid;
-    (function (grid) {
-        var ExpressionService = (function () {
-            function ExpressionService() {
-                this.expressionToFunctionCache = {};
-            }
-            ExpressionService.prototype.init = function (loggerFactory) {
-                this.logger = loggerFactory.create('ExpressionService');
-            };
-            ExpressionService.prototype.evaluate = function (expression, params) {
-                try {
-                    var javaScriptFunction = this.createExpressionFunction(expression);
-                    var result = javaScriptFunction(params.value, params.context, params.node, params.data, params.colDef, params.rowIndex, params.api, params.getValue);
-                    return result;
-                }
-                catch (e) {
-                    // the expression failed, which can happen, as it's the client that
-                    // provides the expression. so print a nice message
-                    this.logger.log('Processing of the expression failed');
-                    this.logger.log('Expression = ' + expression);
-                    this.logger.log('Exception = ' + e);
-                    return null;
-                }
-            };
-            ExpressionService.prototype.createExpressionFunction = function (expression) {
-                // check cache first
-                if (this.expressionToFunctionCache[expression]) {
-                    return this.expressionToFunctionCache[expression];
-                }
-                // if not found in cache, return the function
-                var functionBody = this.createFunctionBody(expression);
-                var theFunction = new Function('x, ctx, node, data, colDef, rowIndex, api, getValue', functionBody);
-                // store in cache
-                this.expressionToFunctionCache[expression] = theFunction;
-                return theFunction;
-            };
-            ExpressionService.prototype.createFunctionBody = function (expression) {
-                // if the expression has the 'return' word in it, then use as is,
-                // if not, then wrap it with return and ';' to make a function
-                if (expression.indexOf('return') >= 0) {
-                    return expression;
-                }
-                else {
-                    return 'return ' + expression + ';';
-                }
-            };
-            return ExpressionService;
-        })();
-        grid.ExpressionService = ExpressionService;
-    })(grid = awk.grid || (awk.grid = {}));
-})(awk || (awk = {}));
 /// <reference path="../utils.ts" />
 /// <reference path="textAndNumberFilterParameters.ts" />
 var awk;
@@ -1761,7 +549,22 @@ var awk;
     var grid;
     (function (grid) {
         var utils = grid.Utils;
-        var template = '<div>' + '<div>' + '<select class="ag-filter-select" id="filterType">' + '<option value="1">[CONTAINS]</option>' + '<option value="2">[EQUALS]</option>' + '<option value="3">[STARTS WITH]</option>' + '<option value="4">[ENDS WITH]</option>' + '</select>' + '</div>' + '<div>' + '<input class="ag-filter-filter" id="filterText" type="text" placeholder="[FILTER...]"/>' + '</div>' + '<div class="ag-filter-apply-panel" id="applyPanel">' + '<button type="button" id="applyButton">Apply Filter</button>' + '</div>' + '</div>';
+        var template = '<div>' +
+            '<div>' +
+            '<select class="ag-filter-select" id="filterType">' +
+            '<option value="1">[CONTAINS]</option>' +
+            '<option value="2">[EQUALS]</option>' +
+            '<option value="3">[STARTS WITH]</option>' +
+            '<option value="4">[ENDS WITH]</option>' +
+            '</select>' +
+            '</div>' +
+            '<div>' +
+            '<input class="ag-filter-filter" id="filterText" type="text" placeholder="[FILTER...]"/>' +
+            '</div>' +
+            '<div class="ag-filter-apply-panel" id="applyPanel">' +
+            '<button type="button" id="applyButton">Apply Filter</button>' +
+            '</div>' +
+            '</div>';
         var CONTAINS = 1;
         var EQUALS = 2;
         var STARTS_WITH = 3;
@@ -1821,7 +624,12 @@ var awk;
                 return this.filterText !== null;
             };
             TextFilter.prototype.createTemplate = function () {
-                return template.replace('[FILTER...]', this.localeTextFunc('filterOoo', 'Filter...')).replace('[EQUALS]', this.localeTextFunc('equals', 'Equals')).replace('[CONTAINS]', this.localeTextFunc('contains', 'Contains')).replace('[STARTS WITH]', this.localeTextFunc('startsWith', 'Starts with')).replace('[ENDS WITH]', this.localeTextFunc('endsWith', 'Ends with'));
+                return template
+                    .replace('[FILTER...]', this.localeTextFunc('filterOoo', 'Filter...'))
+                    .replace('[EQUALS]', this.localeTextFunc('equals', 'Equals'))
+                    .replace('[CONTAINS]', this.localeTextFunc('contains', 'Contains'))
+                    .replace('[STARTS WITH]', this.localeTextFunc('startsWith', 'Starts with'))
+                    .replace('[ENDS WITH]', this.localeTextFunc('endsWith', 'Ends with'));
             };
             TextFilter.prototype.createGui = function () {
                 this.eGui = utils.loadTemplate(this.createTemplate());
@@ -1935,7 +743,21 @@ var awk;
     var grid;
     (function (grid) {
         var utils = grid.Utils;
-        var template = '<div>' + '<div>' + '<select class="ag-filter-select" id="filterType">' + '<option value="1">[EQUALS]</option>' + '<option value="2">[LESS THAN]</option>' + '<option value="3">[GREATER THAN]</option>' + '</select>' + '</div>' + '<div>' + '<input class="ag-filter-filter" id="filterText" type="text" placeholder="[FILTER...]"/>' + '</div>' + '<div class="ag-filter-apply-panel" id="applyPanel">' + '<button type="button" id="applyButton">Apply Filter</button>' + '</div>' + '</div>';
+        var template = '<div>' +
+            '<div>' +
+            '<select class="ag-filter-select" id="filterType">' +
+            '<option value="1">[EQUALS]</option>' +
+            '<option value="2">[LESS THAN]</option>' +
+            '<option value="3">[GREATER THAN]</option>' +
+            '</select>' +
+            '</div>' +
+            '<div>' +
+            '<input class="ag-filter-filter" id="filterText" type="text" placeholder="[FILTER...]"/>' +
+            '</div>' +
+            '<div class="ag-filter-apply-panel" id="applyPanel">' +
+            '<button type="button" id="applyButton">Apply Filter</button>' +
+            '</div>' +
+            '</div>';
         var EQUALS = 1;
         var LESS_THAN = 2;
         var GREATER_THAN = 3;
@@ -1997,7 +819,11 @@ var awk;
                 return this.filterNumber !== null;
             };
             NumberFilter.prototype.createTemplate = function () {
-                return template.replace('[FILTER...]', this.localeTextFunc('filterOoo', 'Filter...')).replace('[EQUALS]', this.localeTextFunc('equals', 'Equals')).replace('[LESS THAN]', this.localeTextFunc('lessThan', 'Less than')).replace('[GREATER THAN]', this.localeTextFunc('greaterThan', 'Greater than'));
+                return template
+                    .replace('[FILTER...]', this.localeTextFunc('filterOoo', 'Filter...'))
+                    .replace('[EQUALS]', this.localeTextFunc('equals', 'Equals'))
+                    .replace('[LESS THAN]', this.localeTextFunc('lessThan', 'Less than'))
+                    .replace('[GREATER THAN]', this.localeTextFunc('greaterThan', 'Greater than'));
             };
             NumberFilter.prototype.createGui = function () {
                 this.eGui = utils.loadTemplate(this.createTemplate());
@@ -2306,7 +1132,30 @@ var awk;
     var grid;
     (function (grid) {
         var _ = grid.Utils;
-        var template = '<div>' + '<div class="ag-filter-header-container">' + '<input class="ag-filter-filter" type="text" placeholder="[SEARCH...]"/>' + '</div>' + '<div class="ag-filter-header-container">' + '<label>' + '<input id="selectAll" type="checkbox" class="ag-filter-checkbox"/>' + '([SELECT ALL])' + '</label>' + '</div>' + '<div class="ag-filter-list-viewport">' + '<div class="ag-filter-list-container">' + '<div id="itemForRepeat" class="ag-filter-item">' + '<label>' + '<input type="checkbox" class="ag-filter-checkbox" filter-checkbox="true"/>' + '<span class="ag-filter-value"></span>' + '</label>' + '</div>' + '</div>' + '</div>' + '<div class="ag-filter-apply-panel" id="applyPanel">' + '<button type="button" id="applyButton">Apply Filter</button>' + '</div>' + '</div>';
+        var template = '<div>' +
+            '<div class="ag-filter-header-container">' +
+            '<input class="ag-filter-filter" type="text" placeholder="[SEARCH...]"/>' +
+            '</div>' +
+            '<div class="ag-filter-header-container">' +
+            '<label>' +
+            '<input id="selectAll" type="checkbox" class="ag-filter-checkbox"/>' +
+            '([SELECT ALL])' +
+            '</label>' +
+            '</div>' +
+            '<div class="ag-filter-list-viewport">' +
+            '<div class="ag-filter-list-container">' +
+            '<div id="itemForRepeat" class="ag-filter-item">' +
+            '<label>' +
+            '<input type="checkbox" class="ag-filter-checkbox" filter-checkbox="true"/>' +
+            '<span class="ag-filter-value"></span>' +
+            '</label>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="ag-filter-apply-panel" id="applyPanel">' +
+            '<button type="button" id="applyButton">Apply Filter</button>' +
+            '</div>' +
+            '</div>';
         var DEFAULT_ROW_HEIGHT = 20;
         var SetFilter = (function () {
             function SetFilter(params) {
@@ -2370,7 +1219,9 @@ var awk;
                 this.refreshVirtualRows();
             };
             SetFilter.prototype.createTemplate = function () {
-                return template.replace('[SELECT ALL]', this.localeTextFunc('selectAll', 'Select All')).replace('[SEARCH...]', this.localeTextFunc('searchOoo', 'Search...'));
+                return template
+                    .replace('[SELECT ALL]', this.localeTextFunc('selectAll', 'Select All'))
+                    .replace('[SEARCH...]', this.localeTextFunc('searchOoo', 'Search...'));
             };
             SetFilter.prototype.createGui = function () {
                 var _this = this;
@@ -2427,6 +1278,7 @@ var awk;
                 var _this = this;
                 //at the end, this array will contain the items we need to remove
                 var rowsToRemove = Object.keys(this.rowsInBodyContainer);
+                //add in new rows
                 for (var rowIndex = start; rowIndex <= finish; rowIndex++) {
                     //see if item already there, and if yes, take it out of the 'to remove' array
                     if (rowsToRemove.indexOf(rowIndex.toString()) >= 0) {
@@ -2654,7 +1506,7 @@ var awk;
             //adds an element to a div, but also listens to background checking for clicks,
             //so that when the background is clicked, the child is removed again, giving
             //a model look to popups.
-            PopupService.prototype.addAsModalPopup = function (eChild) {
+            PopupService.prototype.addAsModalPopup = function (eChild, closeOnEsc) {
                 var eBody = document.body;
                 if (!eBody) {
                     console.warn('ag-grid: could not find the body of the document, document.body is empty');
@@ -2665,19 +1517,29 @@ var awk;
                     return;
                 }
                 this.ePopupParent.appendChild(eChild);
+                var that = this;
                 // if we add these listeners now, then the current mouse
                 // click will be included, which we don't want
                 setTimeout(function () {
+                    if (closeOnEsc) {
+                        eBody.addEventListener('keydown', hidePopupOnEsc);
+                    }
                     eBody.addEventListener('click', hidePopup);
                     eChild.addEventListener('click', consumeClick);
                 }, 0);
                 var eventFromChild = null;
-                var that = this;
+                function hidePopupOnEsc(event) {
+                    var key = event.which || event.keyCode;
+                    if (key === grid.Constants.KEY_ESCAPE) {
+                        hidePopup(null);
+                    }
+                }
                 function hidePopup(event) {
                     if (event && event === eventFromChild) {
                         return;
                     }
                     that.ePopupParent.removeChild(eChild);
+                    eBody.removeEventListener('keydown', hidePopupOnEsc);
                     eBody.removeEventListener('click', hidePopup);
                     eChild.removeEventListener('click', consumeClick);
                 }
@@ -2700,8 +1562,8 @@ var awk;
 var awk;
 (function (awk) {
     var grid;
-    (function (_grid) {
-        var utils = _grid.Utils;
+    (function (grid_1) {
+        var _ = grid_1.Utils;
         var FilterManager = (function () {
             function FilterManager() {
             }
@@ -2716,35 +1578,29 @@ var awk;
                 this.valueService = valueService;
             };
             FilterManager.prototype.setFilterModel = function (model) {
-                var that = this;
+                var _this = this;
                 if (model) {
                     // mark the filters as we set them, so any active filters left over we stop
-                    var processedFields = Object.keys(model);
-                    utils.iterateObject(this.allFilters, function (key, filterWrapper) {
-                        var field = filterWrapper.column.colDef.field;
-                        utils.removeFromArray(processedFields, field);
-                        if (field) {
-                            var newModel = model[field];
-                            that.setModelOnFilterWrapper(filterWrapper.filter, newModel);
-                        }
-                        else {
-                            console.warn('Warning ag-grid - no field found for column while doing setFilterModel');
-                        }
+                    var modelKeys = Object.keys(model);
+                    _.iterateObject(this.allFilters, function (colId, filterWrapper) {
+                        _.removeFromArray(modelKeys, colId);
+                        var newModel = model[colId];
+                        _this.setModelOnFilterWrapper(filterWrapper.filter, newModel);
                     });
                     // at this point, processedFields contains data for which we don't have a filter working yet
-                    utils.iterateArray(processedFields, function (field) {
-                        var column = that.columnModel.getColumn(field);
+                    _.iterateArray(modelKeys, function (colId) {
+                        var column = _this.columnModel.getColumn(colId);
                         if (!column) {
-                            console.warn('Warning ag-grid - no column found for field ' + field);
+                            console.warn('Warning ag-grid setFilterModel - no column found for colId ' + colId);
                             return;
                         }
-                        var filterWrapper = that.getOrCreateFilterWrapper(column);
-                        that.setModelOnFilterWrapper(filterWrapper.filter, model[field]);
+                        var filterWrapper = _this.getOrCreateFilterWrapper(column);
+                        _this.setModelOnFilterWrapper(filterWrapper.filter, model[colId]);
                     });
                 }
                 else {
-                    utils.iterateObject(this.allFilters, function (key, filterWrapper) {
-                        that.setModelOnFilterWrapper(filterWrapper.filter, null);
+                    _.iterateObject(this.allFilters, function (key, filterWrapper) {
+                        _this.setModelOnFilterWrapper(filterWrapper.filter, null);
                     });
                 }
             };
@@ -2763,7 +1619,7 @@ var awk;
             };
             FilterManager.prototype.getFilterModel = function () {
                 var result = {};
-                utils.iterateObject(this.allFilters, function (key, filterWrapper) {
+                _.iterateObject(this.allFilters, function (key, filterWrapper) {
                     // because user can provide filters, we provide useful error checking and messages
                     if (typeof filterWrapper.filter.getApi !== 'function') {
                         console.warn('Warning ag-grid - filter missing getApi method, which is needed for getFilterModel');
@@ -2776,13 +1632,7 @@ var awk;
                     }
                     var model = filterApi.getModel();
                     if (model) {
-                        var field = filterWrapper.column.colDef.field;
-                        if (!field) {
-                            console.warn('Warning ag-grid - cannot get filter model when no field value present for column');
-                        }
-                        else {
-                            result[field] = model;
-                        }
+                        result[key] = model;
                     }
                 });
                 return result;
@@ -2793,10 +1643,7 @@ var awk;
             // returns true if at least one filter is active
             FilterManager.prototype.isFilterPresent = function () {
                 var atLeastOneActive = false;
-                var that = this;
-                var keys = Object.keys(this.allFilters);
-                keys.forEach(function (key) {
-                    var filterWrapper = that.allFilters[key];
+                _.iterateObject(this.allFilters, function (key, filterWrapper) {
                     if (!filterWrapper.filter.isFilterActive) {
                         console.error('Filter is missing method isFilterActive');
                     }
@@ -2906,13 +1753,13 @@ var awk;
                     filterWrapper.filter = new colDef.filter(params);
                 }
                 else if (colDef.filter === 'text') {
-                    filterWrapper.filter = new _grid.TextFilter(params);
+                    filterWrapper.filter = new grid_1.TextFilter(params);
                 }
                 else if (colDef.filter === 'number') {
-                    filterWrapper.filter = new _grid.NumberFilter(params);
+                    filterWrapper.filter = new grid_1.NumberFilter(params);
                 }
                 else {
-                    filterWrapper.filter = new _grid.SetFilter(params);
+                    filterWrapper.filter = new grid_1.SetFilter(params);
                 }
                 if (!filterWrapper.filter.getGui) {
                     throw 'Filter is missing method getGui';
@@ -2920,7 +1767,7 @@ var awk;
                 var eFilterGui = document.createElement('div');
                 eFilterGui.className = 'ag-filter';
                 var guiFromFilter = filterWrapper.filter.getGui();
-                if (utils.isNodeOrElement(guiFromFilter)) {
+                if (_.isNodeOrElement(guiFromFilter)) {
                     //a dom node or element was returned, so add child
                     eFilterGui.appendChild(guiFromFilter);
                 }
@@ -2941,14 +1788,1100 @@ var awk;
             FilterManager.prototype.showFilter = function (column, eventSource) {
                 var filterWrapper = this.getOrCreateFilterWrapper(column);
                 this.popupService.positionPopup(eventSource, filterWrapper.gui, 200);
-                var hidePopup = this.popupService.addAsModalPopup(filterWrapper.gui);
+                var hidePopup = this.popupService.addAsModalPopup(filterWrapper.gui, true);
                 if (filterWrapper.filter.afterGuiAttached) {
-                    filterWrapper.filter.afterGuiAttached({ hidePopup: hidePopup });
+                    var params = {
+                        hidePopup: hidePopup,
+                        eventSource: eventSource
+                    };
+                    filterWrapper.filter.afterGuiAttached(params);
                 }
             };
             return FilterManager;
         })();
-        _grid.FilterManager = FilterManager;
+        grid_1.FilterManager = FilterManager;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+/// <reference path="../constants.ts" />
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var constants = grid.Constants;
+        var Column = (function () {
+            function Column(colDef, actualWidth) {
+                this.colDef = colDef;
+                this.actualWidth = actualWidth;
+                this.visible = !colDef.hide;
+                this.sort = colDef.sort;
+                this.sortedAt = colDef.sortedAt;
+                // in the future, the colKey might be something other than the index
+                if (colDef.colId) {
+                    this.colId = colDef.colId;
+                }
+                else if (colDef.field) {
+                    this.colId = colDef.field;
+                }
+                else {
+                    this.colId = '' + Column.colIdSequence++;
+                }
+            }
+            Column.prototype.isGreaterThanMax = function (width) {
+                if (this.colDef.maxWidth >= constants.MIN_COL_WIDTH) {
+                    return width > this.colDef.maxWidth;
+                }
+                else {
+                    return false;
+                }
+            };
+            Column.prototype.getMinimumWidth = function () {
+                if (this.colDef.minWidth > constants.MIN_COL_WIDTH) {
+                    return this.colDef.minWidth;
+                }
+                else {
+                    return constants.MIN_COL_WIDTH;
+                }
+            };
+            Column.prototype.setMinimum = function () {
+                this.actualWidth = this.getMinimumWidth();
+            };
+            Column.colIdSequence = 0;
+            return Column;
+        })();
+        grid.Column = Column;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var ColumnGroup = (function () {
+            function ColumnGroup(pinned, name) {
+                this.allColumns = [];
+                this.displayedColumns = [];
+                this.expandable = false;
+                this.expanded = false;
+                this.pinned = pinned;
+                this.name = name;
+            }
+            ColumnGroup.prototype.getMinimumWidth = function () {
+                var result = 0;
+                this.displayedColumns.forEach(function (column) {
+                    result += column.getMinimumWidth();
+                });
+                return result;
+            };
+            ColumnGroup.prototype.addColumn = function (column) {
+                this.allColumns.push(column);
+            };
+            // need to check that this group has at least one col showing when both expanded and contracted.
+            // if not, then we don't allow expanding and contracting on this group
+            ColumnGroup.prototype.calculateExpandable = function () {
+                // want to make sure the group doesn't disappear when it's open
+                var atLeastOneShowingWhenOpen = false;
+                // want to make sure the group doesn't disappear when it's closed
+                var atLeastOneShowingWhenClosed = false;
+                // want to make sure the group has something to show / hide
+                var atLeastOneChangeable = false;
+                for (var i = 0, j = this.allColumns.length; i < j; i++) {
+                    var column = this.allColumns[i];
+                    if (column.colDef.headerGroupShow === 'open') {
+                        atLeastOneShowingWhenOpen = true;
+                        atLeastOneChangeable = true;
+                    }
+                    else if (column.colDef.headerGroupShow === 'closed') {
+                        atLeastOneShowingWhenClosed = true;
+                        atLeastOneChangeable = true;
+                    }
+                    else {
+                        atLeastOneShowingWhenOpen = true;
+                        atLeastOneShowingWhenClosed = true;
+                    }
+                }
+                this.expandable = atLeastOneShowingWhenOpen && atLeastOneShowingWhenClosed && atLeastOneChangeable;
+            };
+            ColumnGroup.prototype.calculateActualWidth = function () {
+                var actualWidth = 0;
+                this.displayedColumns.forEach(function (column) {
+                    actualWidth += column.actualWidth;
+                });
+                this.actualWidth = actualWidth;
+            };
+            ColumnGroup.prototype.calculateDisplayedColumns = function () {
+                // clear out last time we calculated
+                this.displayedColumns = [];
+                // it not expandable, everything is visible
+                if (!this.expandable) {
+                    this.displayedColumns = this.allColumns;
+                    return;
+                }
+                // and calculate again
+                for (var i = 0, j = this.allColumns.length; i < j; i++) {
+                    var column = this.allColumns[i];
+                    switch (column.colDef.headerGroupShow) {
+                        case 'open':
+                            // when set to open, only show col if group is open
+                            if (this.expanded) {
+                                this.displayedColumns.push(column);
+                            }
+                            break;
+                        case 'closed':
+                            // when set to open, only show col if group is open
+                            if (!this.expanded) {
+                                this.displayedColumns.push(column);
+                            }
+                            break;
+                        default:
+                            // default is always show the column
+                            this.displayedColumns.push(column);
+                            break;
+                    }
+                }
+            };
+            // should replace with utils method 'add all'
+            ColumnGroup.prototype.addToVisibleColumns = function (colsToAdd) {
+                for (var i = 0; i < this.displayedColumns.length; i++) {
+                    var column = this.displayedColumns[i];
+                    colsToAdd.push(column);
+                }
+            };
+            return ColumnGroup;
+        })();
+        grid.ColumnGroup = ColumnGroup;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var ColumnChangeEvent = (function () {
+            function ColumnChangeEvent(type) {
+                this.type = type;
+            }
+            ColumnChangeEvent.prototype.toString = function () {
+                var result = 'ColumnChangeEvent {type: ' + this.type;
+                if (this.column) {
+                    result += ', column: ' + this.column.colId;
+                }
+                if (this.columnGroup) {
+                    result += ', columnGroup: ' + this.columnGroup.name;
+                }
+                if (this.fromIndex) {
+                    result += ', fromIndex: ' + this.fromIndex;
+                }
+                if (this.toIndex) {
+                    result += ', toIndex: ' + this.toIndex;
+                }
+                result += '}';
+                return result;
+            };
+            ColumnChangeEvent.prototype.withColumn = function (column) {
+                this.column = column;
+                return this;
+            };
+            ColumnChangeEvent.prototype.withColumnGroup = function (columnGroup) {
+                this.columnGroup = columnGroup;
+                return this;
+            };
+            ColumnChangeEvent.prototype.withFromIndex = function (fromIndex) {
+                this.fromIndex = fromIndex;
+                return this;
+            };
+            ColumnChangeEvent.prototype.withToIndex = function (toIndex) {
+                this.toIndex = toIndex;
+                return this;
+            };
+            ColumnChangeEvent.prototype.getFromIndex = function () {
+                return this.fromIndex;
+            };
+            ColumnChangeEvent.prototype.getToIndex = function () {
+                return this.toIndex;
+            };
+            ColumnChangeEvent.prototype.getType = function () {
+                return this.type;
+            };
+            ColumnChangeEvent.prototype.getColumn = function () {
+                return this.column;
+            };
+            ColumnChangeEvent.prototype.getColumnGroup = function () {
+                return this.columnGroup;
+            };
+            ColumnChangeEvent.prototype.isPivotChanged = function () {
+                return this.type === ColumnChangeEvent.TYPE_PIVOT_CHANGE || this.type === ColumnChangeEvent.TYPE_EVERYTHING;
+            };
+            ColumnChangeEvent.prototype.isValueChanged = function () {
+                return this.type === ColumnChangeEvent.TYPE_VALUE_CHANGE || this.type === ColumnChangeEvent.TYPE_EVERYTHING;
+            };
+            ColumnChangeEvent.prototype.isIndividualColumnResized = function () {
+                return this.type === ColumnChangeEvent.TYPE_COLUMN_RESIZED && this.column !== undefined && this.column !== null;
+            };
+            /** A new set of columns has been entered, everything has potentially changed. */
+            ColumnChangeEvent.TYPE_EVERYTHING = 'everything';
+            /** A pivot column was added, removed or order changed. */
+            ColumnChangeEvent.TYPE_PIVOT_CHANGE = 'pivot';
+            /** A value column was added, removed or agg function was changed. */
+            ColumnChangeEvent.TYPE_VALUE_CHANGE = 'value';
+            /** A column was moved */
+            ColumnChangeEvent.TYPE_COLUMN_MOVED = 'columnMoved';
+            /** One or more columns was shown / hidden */
+            ColumnChangeEvent.TYPE_COLUMN_VISIBLE = 'columnVisible';
+            /** A column group was opened / closed */
+            ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED = 'columnGroupOpened';
+            /** One or more columns was resized. If just one, the column in the event is set. */
+            ColumnChangeEvent.TYPE_COLUMN_RESIZED = 'columnResized';
+            return ColumnChangeEvent;
+        })();
+        grid.ColumnChangeEvent = ColumnChangeEvent;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var LoggerFactory = (function () {
+            function LoggerFactory(logging) {
+                this.logging = logging;
+            }
+            LoggerFactory.prototype.create = function (name) {
+                return new Logger(name, this.logging);
+            };
+            return LoggerFactory;
+        })();
+        grid.LoggerFactory = LoggerFactory;
+        var Logger = (function () {
+            function Logger(name, logging) {
+                this.name = name;
+                this.logging = logging;
+            }
+            Logger.prototype.log = function (message) {
+                if (this.logging) {
+                    console.log(this.name + " " + message);
+                }
+            };
+            return Logger;
+        })();
+        grid.Logger = Logger;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+/// <reference path="columnController.ts" />
+/// <reference path="gridOptionsWrapper.ts" />
+/// <reference path="logger.ts" />
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var MasterSlaveService = (function () {
+            function MasterSlaveService() {
+                // flag to mark if we are consuming. to avoid cyclic events (ie slave firing back to master
+                // while processing a master event) we mark this if consuming an event, and if we are, then
+                // we don't fire back any events.
+                this.consuming = false;
+            }
+            MasterSlaveService.prototype.init = function (gridOptionsWrapper, columnController, gridPanel, loggerFactory) {
+                this.gridOptionsWrapper = gridOptionsWrapper;
+                this.columnController = columnController;
+                this.gridPanel = gridPanel;
+                this.logger = loggerFactory.create('MasterSlaveService');
+            };
+            // common logic across all the fire methods
+            MasterSlaveService.prototype.fireEvent = function (callback) {
+                // if we are already consuming, then we are acting on an event from a master,
+                // so we don't cause a cyclic firing of events
+                if (this.consuming) {
+                    return;
+                }
+                // iterate through the slave grids, and pass each slave service to the callback
+                var slaveGrids = this.gridOptionsWrapper.getSlaveGrids();
+                if (slaveGrids) {
+                    slaveGrids.forEach(function (slaveGridOptions) {
+                        if (slaveGridOptions.api) {
+                            var slaveService = slaveGridOptions.api.__getMasterSlaveService();
+                            callback(slaveService);
+                        }
+                    });
+                }
+            };
+            // common logic across all consume methods. very little common logic, however extracting
+            // guarantees consistency across the methods.
+            MasterSlaveService.prototype.onEvent = function (callback) {
+                this.consuming = true;
+                callback();
+                this.consuming = false;
+            };
+            MasterSlaveService.prototype.fireColumnEvent = function (event) {
+                this.fireEvent(function (slaveService) {
+                    slaveService.onColumnEvent(event);
+                });
+            };
+            MasterSlaveService.prototype.fireHorizontalScrollEvent = function (horizontalScroll) {
+                this.fireEvent(function (slaveService) {
+                    slaveService.onScrollEvent(horizontalScroll);
+                });
+            };
+            MasterSlaveService.prototype.onScrollEvent = function (horizontalScroll) {
+                var _this = this;
+                this.onEvent(function () {
+                    _this.gridPanel.setHorizontalScrollPosition(horizontalScroll);
+                });
+            };
+            MasterSlaveService.prototype.onColumnEvent = function (event) {
+                var _this = this;
+                this.onEvent(function () {
+                    // the column in the even is from the master grid. need to
+                    // look up the equivalent from this (slave) grid
+                    var masterColumn = event.getColumn();
+                    var slaveColumn;
+                    if (masterColumn) {
+                        slaveColumn = _this.columnController.getColumn(masterColumn.colId);
+                    }
+                    // if event was with respect to a master column, that is not present in this
+                    // grid, then we ignore the event
+                    if (masterColumn && !slaveColumn) {
+                        return;
+                    }
+                    // likewise for column group
+                    var masterColumnGroup = event.getColumnGroup();
+                    var slaveColumnGroup;
+                    if (masterColumnGroup) {
+                        slaveColumnGroup = _this.columnController.getColumnGroup(masterColumnGroup.name);
+                    }
+                    if (masterColumnGroup && !slaveColumnGroup) {
+                        return;
+                    }
+                    switch (event.getType()) {
+                        // we don't do anything for these three events
+                        //case ColumnChangeEvent.TYPE_EVERYTHING:
+                        //case ColumnChangeEvent.TYPE_PIVOT_CHANGE:
+                        //case ColumnChangeEvent.TYPE_VALUE_CHANGE:
+                        case grid.ColumnChangeEvent.TYPE_COLUMN_MOVED:
+                            _this.logger.log('onColumnEvent-> processing ' + event + ' fromIndex = ' + event.getFromIndex() + ', toIndex = ' + event.getToIndex());
+                            _this.columnController.moveColumn(event.getFromIndex(), event.getToIndex());
+                            break;
+                        case grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE:
+                            _this.logger.log('onColumnEvent-> processing ' + event + ' visible = ' + masterColumn.visible);
+                            _this.columnController.setColumnVisible(slaveColumn, masterColumn.visible);
+                            break;
+                        case grid.ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED:
+                            _this.logger.log('onColumnEvent-> processing ' + event + ' expanded = ' + masterColumnGroup.expanded);
+                            _this.columnController.columnGroupOpened(slaveColumnGroup, masterColumnGroup.expanded);
+                            break;
+                        case grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED:
+                            _this.logger.log('onColumnEvent-> processing ' + event + ' actualWidth = ' + masterColumn.actualWidth);
+                            _this.columnController.setColumnWidth(slaveColumn, masterColumn.actualWidth);
+                            break;
+                    }
+                });
+            };
+            return MasterSlaveService;
+        })();
+        grid.MasterSlaveService = MasterSlaveService;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+/// <reference path="utils.ts" />
+/// <reference path="constants.ts" />
+/// <reference path="entities/column.ts" />
+/// <reference path="entities/columnGroup.ts" />
+/// <reference path="columnChangeEvent.ts" />
+/// <reference path="masterSlaveService.ts" />
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var _ = grid.Utils;
+        var constants = grid.Constants;
+        var ColumnController = (function () {
+            function ColumnController() {
+                this.setupComplete = false;
+                this.changedListeners = [];
+            }
+            ColumnController.prototype.init = function (angularGrid, selectionRendererFactory, gridOptionsWrapper, expressionService, valueService, masterSlaveController) {
+                this.gridOptionsWrapper = gridOptionsWrapper;
+                this.angularGrid = angularGrid;
+                this.selectionRendererFactory = selectionRendererFactory;
+                this.expressionService = expressionService;
+                this.valueService = valueService;
+                this.masterSlaveController = masterSlaveController;
+            };
+            ColumnController.prototype.isSetupComplete = function () {
+                return this.setupComplete;
+            };
+            // used by:
+            // + headerRenderer -> setting pinned body width
+            ColumnController.prototype.getHeaderGroups = function () {
+                return this.columnGroups;
+            };
+            // used by:
+            // + angularGrid -> setting pinned body width
+            ColumnController.prototype.getPinnedContainerWidth = function () {
+                return this.getTotalColWidth(true);
+            };
+            ColumnController.prototype.addPivotColumn = function (column) {
+                if (this.allColumns.indexOf(column) < 0) {
+                    console.warn('not a valid column: ' + column);
+                    return;
+                }
+                if (this.pivotColumns.indexOf(column) >= 0) {
+                    console.warn('column is already a value column');
+                    return;
+                }
+                this.pivotColumns.push(column);
+                // because we could be taking out 'pivot' columns, the displayed
+                // columns may differ, so need to work out all the columns again
+                this.updateModel();
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
+            };
+            ColumnController.prototype.removePivotColumn = function (column) {
+                if (this.pivotColumns.indexOf(column) < 0) {
+                    console.warn('column not a pivot');
+                    return;
+                }
+                _.removeFromArray(this.pivotColumns, column);
+                this.updateModel();
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
+            };
+            ColumnController.prototype.addValueColumn = function (column) {
+                if (this.allColumns.indexOf(column) < 0) {
+                    console.warn('not a valid column: ' + column);
+                    return;
+                }
+                if (this.valueColumns.indexOf(column) >= 0) {
+                    console.warn('column is already a value column');
+                    return;
+                }
+                if (!column.aggFunc) {
+                    column.aggFunc = constants.SUM;
+                }
+                this.valueColumns.push(column);
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
+            };
+            ColumnController.prototype.removeValueColumn = function (column) {
+                if (this.valueColumns.indexOf(column) < 0) {
+                    console.warn('column not a value');
+                    return;
+                }
+                _.removeFromArray(this.valueColumns, column);
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
+            };
+            // returns true if the col is either in all columns or visible columns.
+            // we need to check visible columns because the grouping column could come
+            // from the gridOptions, so that's a special case
+            ColumnController.prototype.doesColumnExistInGrid = function (column) {
+                var columnInAllColumns = this.allColumns.indexOf(column) >= 0;
+                var columnInVisibleColumns = this.visibleColumns.indexOf(column) >= 0;
+                return columnInAllColumns || columnInVisibleColumns;
+            };
+            ColumnController.prototype.setColumnWidth = function (column, newWidth) {
+                if (!this.doesColumnExistInGrid(column)) {
+                    console.warn('column does not exist');
+                    return;
+                }
+                if (newWidth < column.getMinimumWidth()) {
+                    newWidth = column.getMinimumWidth();
+                }
+                if (column.isGreaterThanMax(newWidth)) {
+                    newWidth = column.colDef.maxWidth;
+                }
+                // check for change first, to avoid unnecessary firing of events
+                if (column.actualWidth !== newWidth) {
+                    column.actualWidth = newWidth;
+                    // if part of a group, update the groups width
+                    this.updateGroupWidthsAfterColumnResize(column);
+                    var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED).withColumn(column);
+                    this.fireColumnChanged(event);
+                }
+                if (typeof this.gridOptionsWrapper.getColumnResized() === 'function') {
+                    this.gridOptionsWrapper.getColumnResized()(column);
+                }
+            };
+            ColumnController.prototype.updateGroupWidthsAfterColumnResize = function (column) {
+                if (this.columnGroups) {
+                    this.columnGroups.forEach(function (columnGroup) {
+                        if (columnGroup.displayedColumns.indexOf(column) >= 0) {
+                            columnGroup.calculateActualWidth();
+                        }
+                    });
+                }
+            };
+            ColumnController.prototype.setColumnAggFunction = function (column, aggFunc) {
+                column.aggFunc = aggFunc;
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_VALUE_CHANGE));
+            };
+            ColumnController.prototype.movePivotColumn = function (fromIndex, toIndex) {
+                var column = this.pivotColumns[fromIndex];
+                this.pivotColumns.splice(fromIndex, 1);
+                this.pivotColumns.splice(toIndex, 0, column);
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_PIVOT_CHANGE));
+            };
+            ColumnController.prototype.moveColumn = function (fromIndex, toIndex) {
+                var column = this.allColumns[fromIndex];
+                this.allColumns.splice(fromIndex, 1);
+                this.allColumns.splice(toIndex, 0, column);
+                this.updateModel();
+                var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_MOVED)
+                    .withFromIndex(fromIndex)
+                    .withToIndex(toIndex);
+                this.fireColumnChanged(event);
+                if (typeof this.gridOptionsWrapper.getColumnOrderChanged() === 'function') {
+                    this.gridOptionsWrapper.getColumnOrderChanged()(this.allColumns);
+                }
+            };
+            // used by:
+            // + angularGrid -> for setting body width
+            // + rowController -> setting main row widths (when inserting and resizing)
+            ColumnController.prototype.getBodyContainerWidth = function () {
+                return this.getTotalColWidth(false);
+            };
+            // + rowController
+            ColumnController.prototype.getValueColumns = function () {
+                return this.valueColumns;
+            };
+            // + toolPanel
+            ColumnController.prototype.getGroupedColumns = function () {
+                return this.pivotColumns;
+            };
+            // + rowController -> while inserting rows, and when tabbing through cells (need to change this)
+            // need a newMethod - get next col index
+            ColumnController.prototype.getDisplayedColumns = function () {
+                return this.displayedColumns;
+            };
+            // used by:
+            // + inMemoryRowController -> sorting, building quick filter text
+            // + headerRenderer -> sorting (clearing icon)
+            ColumnController.prototype.getAllColumns = function () {
+                return this.allColumns;
+            };
+            ColumnController.prototype.setColumnVisible = function (column, visible) {
+                column.visible = visible;
+                this.updateModel();
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE).withColumn(column));
+                if (typeof this.gridOptionsWrapper.getColumnVisibilityChanged() === 'function') {
+                    this.gridOptionsWrapper.getColumnVisibilityChanged()(this.allColumns);
+                }
+            };
+            ColumnController.prototype.getVisibleColBefore = function (col) {
+                var oldIndex = this.visibleColumns.indexOf(col);
+                if (oldIndex > 0) {
+                    return this.visibleColumns[oldIndex - 1];
+                }
+                else {
+                    return null;
+                }
+            };
+            // used by:
+            // + rowRenderer -> for navigation
+            ColumnController.prototype.getVisibleColAfter = function (col) {
+                var oldIndex = this.visibleColumns.indexOf(col);
+                if (oldIndex < (this.visibleColumns.length - 1)) {
+                    return this.visibleColumns[oldIndex + 1];
+                }
+                else {
+                    return null;
+                }
+            };
+            ColumnController.prototype.isPinning = function () {
+                return this.visibleColumns && this.visibleColumns.length > 0 && this.visibleColumns[0].pinned;
+            };
+            ColumnController.prototype.getState = function () {
+                if (!this.allColumns || this.allColumns.length < 0) {
+                    return [];
+                }
+                var result = [];
+                for (var i = 0; i < this.allColumns.length; i++) {
+                    var column = this.allColumns[i];
+                    var pivotIndex = this.pivotColumns.indexOf(column);
+                    var resultItem = {
+                        colId: column.colId,
+                        hide: !column.visible,
+                        aggFunc: column.aggFunc ? column.aggFunc : null,
+                        width: column.actualWidth,
+                        pivotIndex: pivotIndex >= 0 ? pivotIndex : null
+                    };
+                    result.push(resultItem);
+                }
+                return result;
+            };
+            ColumnController.prototype.setState = function (columnState) {
+                var oldColumnList = this.allColumns;
+                this.allColumns = [];
+                this.pivotColumns = [];
+                this.valueColumns = [];
+                var that = this;
+                _.forEach(columnState, function (stateItem) {
+                    var oldColumn = _.find(oldColumnList, 'colId', stateItem.colId);
+                    if (!oldColumn) {
+                        console.warn('ag-grid: column ' + stateItem.colId + ' not found');
+                        return;
+                    }
+                    // following ensures we are left with boolean true or false, eg converts (null, undefined, 0) all to true
+                    oldColumn.visible = stateItem.hide ? false : true;
+                    // if width provided and valid, use it, otherwise stick with the old width
+                    oldColumn.actualWidth = stateItem.width >= constants.MIN_COL_WIDTH ? stateItem.width : oldColumn.actualWidth;
+                    // accept agg func only if valid
+                    var aggFuncValid = [constants.MIN, constants.MAX, constants.SUM].indexOf(stateItem.aggFunc) >= 0;
+                    if (aggFuncValid) {
+                        oldColumn.aggFunc = stateItem.aggFunc;
+                        that.valueColumns.push(oldColumn);
+                    }
+                    else {
+                        oldColumn.aggFunc = null;
+                    }
+                    // if pivot
+                    if (typeof stateItem.pivotIndex === 'number' && stateItem.pivotIndex >= 0) {
+                        that.pivotColumns.push(oldColumn);
+                    }
+                    that.allColumns.push(oldColumn);
+                    oldColumnList.splice(oldColumnList.indexOf(oldColumn), 1);
+                });
+                // anything left over, we got no data for, so add in the column as non-value, non-pivot and hidden
+                _.forEach(oldColumnList, function (oldColumn) {
+                    oldColumn.visible = false;
+                    oldColumn.aggFunc = null;
+                    that.allColumns.push(oldColumn);
+                });
+                this.pivotColumns.sort(function (colA, colB) {
+                    return colA.pivotIndex - colB.pivotIndex;
+                });
+                this.updateModel();
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_EVERYTHING));
+            };
+            ColumnController.prototype.getColumn = function (key) {
+                if (!key) {
+                    return null;
+                }
+                // need both allColumns and visibleColumns, in case the
+                // grouping column that came from the grid options
+                var listsToCheck = [this.allColumns, this.visibleColumns];
+                for (var j = 0; j < listsToCheck.length; j++) {
+                    var list = listsToCheck[j];
+                    if (!list) {
+                        continue;
+                    }
+                    for (var i = 0; i < list.length; i++) {
+                        var colDefMatches = list[i].colDef === key;
+                        var idMatches = list[i].colId === key;
+                        if (colDefMatches || idMatches) {
+                            return list[i];
+                        }
+                    }
+                }
+            };
+            ColumnController.prototype.getDisplayNameForCol = function (column) {
+                var colDef = column.colDef;
+                var headerValueGetter = colDef.headerValueGetter;
+                if (headerValueGetter) {
+                    var params = {
+                        colDef: colDef,
+                        api: this.gridOptionsWrapper.getApi(),
+                        context: this.gridOptionsWrapper.getContext()
+                    };
+                    if (typeof headerValueGetter === 'function') {
+                        // valueGetter is a function, so just call it
+                        return headerValueGetter(params);
+                    }
+                    else if (typeof headerValueGetter === 'string') {
+                        // valueGetter is an expression, so execute the expression
+                        return this.expressionService.evaluate(headerValueGetter, params);
+                    }
+                    else {
+                        console.warn('ag-grid: headerValueGetter must be a function or a string');
+                    }
+                }
+                else if (colDef.displayName) {
+                    console.warn("ag-grid: Found displayName " + colDef.displayName + ", please use headerName instead, displayName is deprecated.");
+                    return colDef.displayName;
+                }
+                else {
+                    return colDef.headerName;
+                }
+            };
+            ColumnController.prototype.addChangeListener = function (listener) {
+                this.changedListeners.push(listener);
+            };
+            ColumnController.prototype.getColumnGroup = function (name) {
+                if (!name) {
+                    return null;
+                }
+                if (this.columnGroups) {
+                    for (var i = 0; i < this.columnGroups.length; i++) {
+                        if (this.columnGroups[i].name === name) {
+                            return this.columnGroups[i];
+                        }
+                    }
+                }
+            };
+            ColumnController.prototype.fireColumnChanged = function (event) {
+                for (var i = 0; i < this.changedListeners.length; i++) {
+                    this.changedListeners[i](event);
+                }
+                this.masterSlaveController.fireColumnEvent(event);
+            };
+            // called by angularGrid
+            ColumnController.prototype.setColumns = function (columnDefs) {
+                this.checkForDeprecatedItems(columnDefs);
+                this.createColumns(columnDefs);
+                this.createPivotColumns();
+                this.createValueColumns();
+                this.updateModel();
+                this.fireColumnChanged(new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_EVERYTHING));
+                this.setupComplete = true;
+            };
+            ColumnController.prototype.checkForDeprecatedItems = function (columnDefs) {
+                if (columnDefs) {
+                    for (var i = 0; i < columnDefs.length; i++) {
+                        var colDef = columnDefs[i];
+                        if (colDef.group !== undefined) {
+                            console.warn('ag-grid: ' + colDef.field + ' colDef.group is deprecated, please use colDef.headerGroup');
+                            colDef.headerGroup = colDef.group;
+                        }
+                        if (colDef.groupShow !== undefined) {
+                            console.warn('ag-grid: ' + colDef.field + ' colDef.groupShow is deprecated, please use colDef.headerGroupShow');
+                            colDef.headerGroupShow = colDef.groupShow;
+                        }
+                    }
+                }
+            };
+            // called by headerRenderer - when a header is opened or closed
+            ColumnController.prototype.columnGroupOpened = function (group, newValue) {
+                group.expanded = newValue;
+                this.updateGroups();
+                this.updateDisplayedColumns();
+                var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_GROUP_OPENED).withColumnGroup(group);
+                this.fireColumnChanged(event);
+            };
+            // called from API
+            ColumnController.prototype.hideColumns = function (colIds, hide) {
+                var _this = this;
+                var updatedCols = [];
+                this.allColumns.forEach(function (column) {
+                    var idThisCol = column.colId;
+                    var hideThisCol = colIds.indexOf(idThisCol) >= 0;
+                    var newVisible = !hide;
+                    if (hideThisCol && column.visible !== newVisible) {
+                        column.visible = newVisible;
+                        updatedCols.push(column);
+                    }
+                });
+                if (updatedCols.length > 0) {
+                    this.updateModel();
+                    updatedCols.forEach(function (column) {
+                        var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_VISIBLE)
+                            .withColumn(column);
+                        _this.fireColumnChanged(event);
+                    });
+                }
+            };
+            ColumnController.prototype.updateModel = function () {
+                this.updateVisibleColumns();
+                this.updatePinnedColumns();
+                this.buildGroups();
+                this.updateGroups();
+                this.updateDisplayedColumns();
+            };
+            ColumnController.prototype.updateDisplayedColumns = function () {
+                if (!this.gridOptionsWrapper.isGroupHeaders()) {
+                    // if not grouping by headers, then pull visible cols
+                    this.displayedColumns = this.visibleColumns;
+                }
+                else {
+                    // if grouping, then only show col as per group rules
+                    this.displayedColumns = [];
+                    for (var i = 0; i < this.columnGroups.length; i++) {
+                        var group = this.columnGroups[i];
+                        group.addToVisibleColumns(this.displayedColumns);
+                    }
+                }
+            };
+            // called from api
+            ColumnController.prototype.sizeColumnsToFit = function (gridWidth) {
+                var _this = this;
+                // avoid divide by zero
+                if (gridWidth <= 0 || this.displayedColumns.length === 0) {
+                    return;
+                }
+                var colsToNotSpread = _.filter(this.displayedColumns, function (column) {
+                    return column.colDef.suppressSizeToFit === true;
+                });
+                var colsToSpread = _.filter(this.displayedColumns, function (column) {
+                    return column.colDef.suppressSizeToFit !== true;
+                });
+                // make a copy of the cols that are going to be resized
+                var colsToFireEventFor = colsToSpread.slice(0);
+                var finishedResizing = false;
+                while (!finishedResizing) {
+                    finishedResizing = true;
+                    var availablePixels = gridWidth - getTotalWidth(colsToNotSpread);
+                    if (availablePixels <= 0) {
+                        // no width, set everything to minimum
+                        colsToSpread.forEach(function (column) {
+                            column.setMinimum();
+                            _this.updateGroupWidthsAfterColumnResize(column);
+                        });
+                    }
+                    else {
+                        var scale = availablePixels / getTotalWidth(colsToSpread);
+                        // we set the pixels for the last col based on what's left, as otherwise
+                        // we could be a pixel or two short or extra because of rounding errors.
+                        var pixelsForLastCol = availablePixels;
+                        // backwards through loop, as we are removing items as we go
+                        for (var i = colsToSpread.length - 1; i >= 0; i--) {
+                            var column = colsToSpread[i];
+                            var newWidth = Math.round(column.actualWidth * scale);
+                            if (newWidth < column.getMinimumWidth()) {
+                                column.setMinimum();
+                                moveToNotSpread(column);
+                                finishedResizing = false;
+                            }
+                            else if (column.isGreaterThanMax(newWidth)) {
+                                column.actualWidth = column.colDef.maxWidth;
+                                moveToNotSpread(column);
+                                finishedResizing = false;
+                            }
+                            else {
+                                var onLastCol = i === 0;
+                                if (onLastCol) {
+                                    column.actualWidth = pixelsForLastCol;
+                                }
+                                else {
+                                    pixelsForLastCol -= newWidth;
+                                    column.actualWidth = newWidth;
+                                }
+                            }
+                            this.updateGroupWidthsAfterColumnResize(column);
+                        }
+                    }
+                }
+                // widths set, refresh the gui
+                colsToFireEventFor.forEach(function (column) {
+                    var event = new grid.ColumnChangeEvent(grid.ColumnChangeEvent.TYPE_COLUMN_RESIZED).withColumn(column);
+                    _this.fireColumnChanged(event);
+                });
+                function moveToNotSpread(column) {
+                    _.removeFromArray(colsToSpread, column);
+                    colsToNotSpread.push(column);
+                }
+                function getTotalWidth(columns) {
+                    var result = 0;
+                    for (var i = 0; i < columns.length; i++) {
+                        result += columns[i].actualWidth;
+                    }
+                    return result;
+                }
+            };
+            ColumnController.prototype.buildGroups = function () {
+                // if not grouping by headers, do nothing
+                if (!this.gridOptionsWrapper.isGroupHeaders()) {
+                    this.columnGroups = null;
+                    return;
+                }
+                // split the columns into groups
+                var currentGroup = null;
+                this.columnGroups = [];
+                var that = this;
+                var lastColWasPinned = true;
+                this.visibleColumns.forEach(function (column) {
+                    // do we need a new group, because we move from pinned to non-pinned columns?
+                    var endOfPinnedHeader = lastColWasPinned && !column.pinned;
+                    if (!column.pinned) {
+                        lastColWasPinned = false;
+                    }
+                    // do we need a new group, because the group names doesn't match from previous col?
+                    var groupKeyMismatch = currentGroup && column.colDef.headerGroup !== currentGroup.name;
+                    // we don't group columns where no group is specified
+                    var colNotInGroup = currentGroup && !currentGroup.name;
+                    // do we need a new group, because we are just starting
+                    var processingFirstCol = currentGroup === null;
+                    var newGroupNeeded = processingFirstCol || endOfPinnedHeader || groupKeyMismatch || colNotInGroup;
+                    // create new group, if it's needed
+                    if (newGroupNeeded) {
+                        var pinned = column.pinned;
+                        currentGroup = new grid.ColumnGroup(pinned, column.colDef.headerGroup);
+                        that.columnGroups.push(currentGroup);
+                    }
+                    currentGroup.addColumn(column);
+                });
+            };
+            ColumnController.prototype.updateGroups = function () {
+                // if not grouping by headers, do nothing
+                if (!this.gridOptionsWrapper.isGroupHeaders()) {
+                    return;
+                }
+                for (var i = 0; i < this.columnGroups.length; i++) {
+                    var group = this.columnGroups[i];
+                    group.calculateExpandable();
+                    group.calculateDisplayedColumns();
+                    group.calculateActualWidth();
+                }
+            };
+            ColumnController.prototype.updateVisibleColumns = function () {
+                this.visibleColumns = [];
+                // see if we need to insert the default grouping column
+                var needAGroupColumn = this.pivotColumns.length > 0
+                    && !this.gridOptionsWrapper.isGroupSuppressAutoColumn()
+                    && !this.gridOptionsWrapper.isGroupUseEntireRow()
+                    && !this.gridOptionsWrapper.isGroupSuppressRow();
+                var localeTextFunc = this.gridOptionsWrapper.getLocaleTextFunc();
+                if (needAGroupColumn) {
+                    // if one provided by user, use it, otherwise create one
+                    var groupColDef = this.gridOptionsWrapper.getGroupColumnDef();
+                    if (!groupColDef) {
+                        groupColDef = {
+                            headerName: localeTextFunc('group', 'Group'),
+                            cellRenderer: {
+                                renderer: "group"
+                            }
+                        };
+                    }
+                    // no group column provided, need to create one here
+                    var groupColumnWidth = this.calculateColInitialWidth(groupColDef);
+                    var groupColumn = new grid.Column(groupColDef, groupColumnWidth);
+                    this.visibleColumns.push(groupColumn);
+                }
+                for (var i = 0; i < this.allColumns.length; i++) {
+                    var column = this.allColumns[i];
+                    var hideBecauseOfPivot = this.pivotColumns.indexOf(column) >= 0
+                        && this.gridOptionsWrapper.isGroupHidePivotColumns();
+                    if (column.visible && !hideBecauseOfPivot) {
+                        column.index = this.visibleColumns.length;
+                        this.visibleColumns.push(this.allColumns[i]);
+                    }
+                }
+            };
+            ColumnController.prototype.updatePinnedColumns = function () {
+                var pinnedColumnCount = this.gridOptionsWrapper.getPinnedColCount();
+                for (var i = 0; i < this.visibleColumns.length; i++) {
+                    var pinned = i < pinnedColumnCount;
+                    this.visibleColumns[i].pinned = pinned;
+                }
+            };
+            ColumnController.prototype.createColumns = function (colDefs) {
+                this.allColumns = [];
+                if (colDefs) {
+                    for (var i = 0; i < colDefs.length; i++) {
+                        var colDef = colDefs[i];
+                        var width = this.calculateColInitialWidth(colDef);
+                        var column = new grid.Column(colDef, width);
+                        this.allColumns.push(column);
+                    }
+                }
+            };
+            ColumnController.prototype.createPivotColumns = function () {
+                this.pivotColumns = [];
+                var groupKeys = this.gridOptionsWrapper.getGroupKeys();
+                if (!groupKeys || groupKeys.length <= 0) {
+                    return;
+                }
+                for (var i = 0; i < groupKeys.length; i++) {
+                    var groupKey = groupKeys[i];
+                    var column = this.getColumn(groupKey);
+                    if (!column) {
+                        column = this.createDummyColumn(groupKey);
+                    }
+                    this.pivotColumns.push(column);
+                }
+            };
+            ColumnController.prototype.createValueColumns = function () {
+                this.valueColumns = [];
+                // override with columns that have the aggFunc specified explicitly
+                for (var i = 0; i < this.allColumns.length; i++) {
+                    var column = this.allColumns[i];
+                    if (column.colDef.aggFunc) {
+                        column.aggFunc = column.colDef.aggFunc;
+                        this.valueColumns.push(column);
+                    }
+                }
+            };
+            ColumnController.prototype.createDummyColumn = function (field) {
+                var colDef = {
+                    field: field,
+                    headerName: field,
+                    hide: false
+                };
+                var width = this.gridOptionsWrapper.getColWidth();
+                var column = new grid.Column(colDef, width);
+                return column;
+            };
+            ColumnController.prototype.calculateColInitialWidth = function (colDef) {
+                if (!colDef.width) {
+                    // if no width defined in colDef, use default
+                    return this.gridOptionsWrapper.getColWidth();
+                }
+                else if (colDef.width < constants.MIN_COL_WIDTH) {
+                    // if width in col def to small, set to min width
+                    return constants.MIN_COL_WIDTH;
+                }
+                else {
+                    // otherwise use the provided width
+                    return colDef.width;
+                }
+            };
+            // call with true (pinned), false (not-pinned) or undefined (all columns)
+            ColumnController.prototype.getTotalColWidth = function (includePinned) {
+                var widthSoFar = 0;
+                var pinedNotImportant = typeof includePinned !== 'boolean';
+                this.displayedColumns.forEach(function (column) {
+                    var includeThisCol = pinedNotImportant || column.pinned === includePinned;
+                    if (includeThisCol) {
+                        widthSoFar += column.actualWidth;
+                    }
+                });
+                return widthSoFar;
+            };
+            return ColumnController;
+        })();
+        grid.ColumnController = ColumnController;
+    })(grid = awk.grid || (awk.grid = {}));
+})(awk || (awk = {}));
+var awk;
+(function (awk) {
+    var grid;
+    (function (grid) {
+        var ExpressionService = (function () {
+            function ExpressionService() {
+                this.expressionToFunctionCache = {};
+            }
+            ExpressionService.prototype.init = function (loggerFactory) {
+                this.logger = loggerFactory.create('ExpressionService');
+            };
+            ExpressionService.prototype.evaluate = function (expression, params) {
+                try {
+                    var javaScriptFunction = this.createExpressionFunction(expression);
+                    var result = javaScriptFunction(params.value, params.context, params.node, params.data, params.colDef, params.rowIndex, params.api, params.getValue);
+                    return result;
+                }
+                catch (e) {
+                    // the expression failed, which can happen, as it's the client that
+                    // provides the expression. so print a nice message
+                    this.logger.log('Processing of the expression failed');
+                    this.logger.log('Expression = ' + expression);
+                    this.logger.log('Exception = ' + e);
+                    return null;
+                }
+            };
+            ExpressionService.prototype.createExpressionFunction = function (expression) {
+                // check cache first
+                if (this.expressionToFunctionCache[expression]) {
+                    return this.expressionToFunctionCache[expression];
+                }
+                // if not found in cache, return the function
+                var functionBody = this.createFunctionBody(expression);
+                var theFunction = new Function('x, ctx, node, data, colDef, rowIndex, api, getValue', functionBody);
+                // store in cache
+                this.expressionToFunctionCache[expression] = theFunction;
+                return theFunction;
+            };
+            ExpressionService.prototype.createFunctionBody = function (expression) {
+                // if the expression has the 'return' word in it, then use as is,
+                // if not, then wrap it with return and ';' to make a function
+                if (expression.indexOf('return') >= 0) {
+                    return expression;
+                }
+                else {
+                    return 'return ' + expression + ';';
+                }
+            };
+            return ExpressionService;
+        })();
+        grid.ExpressionService = ExpressionService;
     })(grid = awk.grid || (awk.grid = {}));
 })(awk || (awk = {}));
 var awk;
@@ -3106,9 +3039,7 @@ var awk;
             VElement.prototype.elementAttached = function (element) {
                 this.fireElementAttached(element);
             };
-            VElement.prototype.toHtmlString = function () {
-                return null;
-            };
+            VElement.prototype.toHtmlString = function () { return null; };
             VElement.idSequence = 0;
             return VElement;
         })();
@@ -3117,7 +3048,7 @@ var awk;
 })(awk || (awk = {}));
 /// <reference path="vElement.ts" />
 /// <reference path="../utils.ts" />
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -3754,7 +3685,8 @@ var awk;
                         return;
                     }
                     var key = event.which || event.keyCode;
-                    var startNavigation = key === grid.Constants.KEY_DOWN || key === grid.Constants.KEY_UP || key === grid.Constants.KEY_LEFT || key === grid.Constants.KEY_RIGHT;
+                    var startNavigation = key === grid.Constants.KEY_DOWN || key === grid.Constants.KEY_UP
+                        || key === grid.Constants.KEY_LEFT || key === grid.Constants.KEY_RIGHT;
                     if (startNavigation) {
                         event.preventDefault();
                         that.rowRenderer.navigateToNextCell(key, that.rowIndex, that.column);
@@ -4469,7 +4401,8 @@ var awk;
             }
             function getGroupName(params) {
                 var cellRenderer = params.colDef.cellRenderer;
-                if (cellRenderer && cellRenderer.keyMap && typeof cellRenderer.keyMap === 'object' && params.colDef.cellRenderer !== null) {
+                if (cellRenderer && cellRenderer.keyMap
+                    && typeof cellRenderer.keyMap === 'object' && params.colDef.cellRenderer !== null) {
                     var valueFromMap = cellRenderer.keyMap[params.node.key];
                     if (valueFromMap) {
                         return valueFromMap;
@@ -4687,6 +4620,7 @@ var awk;
                 var that = this;
                 // at the end, this array will contain the items we need to remove
                 var rowsToRemove = Object.keys(this.renderedRows);
+                // add in new rows
                 for (var rowIndex = this.firstVirtualRenderedRow; rowIndex <= this.lastVirtualRenderedRow; rowIndex++) {
                     // see if item already there, and if yes, take it out of the 'to remove' array
                     if (rowsToRemove.indexOf(rowIndex.toString()) >= 0) {
@@ -4738,6 +4672,7 @@ var awk;
                 var cellToFocus = { rowIndex: rowIndex, column: column };
                 var renderedRow;
                 var eCell;
+                // we keep searching for a next cell until we find one. this is how the group rows get skipped
                 while (!eCell) {
                     cellToFocus = this.getNextCellToFocus(key, cellToFocus);
                     // no next cell means we have reached a grid boundary, eg left, right, top or bottom of grid
@@ -4832,7 +4767,7 @@ var awk;
                 var renderedRow = this.renderedRows[rowIndex];
                 var column = this.columnModel.getDisplayedColumns()[colIndex];
                 if (renderedRow && column) {
-                    var eCell = renderedRow.getCellForCol(column.colId);
+                    var eCell = renderedRow.getCellForCol(column);
                     this.focusCell(eCell, rowIndex, colIndex, column.colDef, true);
                 }
             };
@@ -5295,18 +5230,12 @@ var awk;
                 return this.eRoot;
             };
             // methods implemented by the base classes
-            RenderedHeaderElement.prototype.destroy = function () {
-            };
-            RenderedHeaderElement.prototype.refreshFilterIcon = function () {
-            };
-            RenderedHeaderElement.prototype.refreshSortIcon = function () {
-            };
-            RenderedHeaderElement.prototype.onDragStart = function () {
-            };
-            RenderedHeaderElement.prototype.onDragging = function (dragChange) {
-            };
-            RenderedHeaderElement.prototype.onIndividualColumnResized = function (column) {
-            };
+            RenderedHeaderElement.prototype.destroy = function () { };
+            RenderedHeaderElement.prototype.refreshFilterIcon = function () { };
+            RenderedHeaderElement.prototype.refreshSortIcon = function () { };
+            RenderedHeaderElement.prototype.onDragStart = function () { };
+            RenderedHeaderElement.prototype.onDragging = function (dragChange) { };
+            RenderedHeaderElement.prototype.onIndividualColumnResized = function (column) { };
             RenderedHeaderElement.prototype.addDragHandler = function (eDraggableElement) {
                 var that = this;
                 eDraggableElement.addEventListener('mousedown', function (downEvent) {
@@ -5968,6 +5897,7 @@ var awk;
                         }
                     }
                 }
+                //remove the temporary map
                 for (i = 0; i < allGroups.length; i++) {
                     delete allGroups[i].childrenMap;
                 }
@@ -6061,6 +5991,7 @@ var awk;
             };
             // public
             InMemoryRowController.prototype.updateModel = function (step) {
+                // fallthrough in below switch is on purpose
                 switch (step) {
                     case constants.STEP_EVERYTHING:
                     case constants.STEP_FILTER:
@@ -6260,6 +6191,7 @@ var awk;
                 this.updateChildIndexes(rowNodes);
             };
             InMemoryRowController.prototype.sortList = function (nodes, sortOptions) {
+                // sort any groups recursively
                 for (var i = 0, l = nodes.length; i < l; i++) {
                     var node = nodes[i];
                     if (node.group && node.children) {
@@ -6281,6 +6213,7 @@ var awk;
                     }
                 }
                 nodes.sort(function (objA, objB) {
+                    // Iterate columns, return the first that doesn't match
                     for (var i = 0, len = sortOptions.length; i < len; i++) {
                         var sortOption = sortOptions[i];
                         var compared = compare(objA, objB, sortOption.column, sortOption.inverter === -1);
@@ -6832,7 +6765,25 @@ var awk;
     var grid;
     (function (grid) {
         var utils = grid.Utils;
-        var template = '<div class="ag-paging-panel">' + '<span id="pageRowSummaryPanel" class="ag-paging-row-summary-panel">' + '<span id="firstRowOnPage"></span>' + ' [TO] ' + '<span id="lastRowOnPage"></span>' + ' [OF] ' + '<span id="recordCount"></span>' + '</span>' + '<span class="ag-paging-page-summary-panel">' + '<button class="ag-paging-button" id="btFirst">[FIRST]</button>' + '<button class="ag-paging-button" id="btPrevious">[PREVIOUS]</button>' + '[PAGE] ' + '<span id="current"></span>' + ' [OF] ' + '<span id="total"></span>' + '<button class="ag-paging-button" id="btNext">[NEXT]</button>' + '<button class="ag-paging-button" id="btLast">[LAST]</button>' + '</span>' + '</div>';
+        var template = '<div class="ag-paging-panel">' +
+            '<span id="pageRowSummaryPanel" class="ag-paging-row-summary-panel">' +
+            '<span id="firstRowOnPage"></span>' +
+            ' [TO] ' +
+            '<span id="lastRowOnPage"></span>' +
+            ' [OF] ' +
+            '<span id="recordCount"></span>' +
+            '</span>' +
+            '<span class="ag-paging-page-summary-panel">' +
+            '<button class="ag-paging-button" id="btFirst">[FIRST]</button>' +
+            '<button class="ag-paging-button" id="btPrevious">[PREVIOUS]</button>' +
+            '[PAGE] ' +
+            '<span id="current"></span>' +
+            ' [OF] ' +
+            '<span id="total"></span>' +
+            '<button class="ag-paging-button" id="btNext">[NEXT]</button>' +
+            '<button class="ag-paging-button" id="btLast">[LAST]</button>' +
+            '</span>' +
+            '</div>';
         var PaginationController = (function () {
             function PaginationController() {
             }
@@ -7007,7 +6958,15 @@ var awk;
             };
             PaginationController.prototype.createTemplate = function () {
                 var localeTextFunc = this.gridOptionsWrapper.getLocaleTextFunc();
-                return template.replace('[PAGE]', localeTextFunc('page', 'Page')).replace('[TO]', localeTextFunc('to', 'to')).replace('[OF]', localeTextFunc('of', 'of')).replace('[OF]', localeTextFunc('of', 'of')).replace('[FIRST]', localeTextFunc('first', 'First')).replace('[PREVIOUS]', localeTextFunc('previous', 'Previous')).replace('[NEXT]', localeTextFunc('next', 'Next')).replace('[LAST]', localeTextFunc('last', 'Last'));
+                return template
+                    .replace('[PAGE]', localeTextFunc('page', 'Page'))
+                    .replace('[TO]', localeTextFunc('to', 'to'))
+                    .replace('[OF]', localeTextFunc('of', 'of'))
+                    .replace('[OF]', localeTextFunc('of', 'of'))
+                    .replace('[FIRST]', localeTextFunc('first', 'First'))
+                    .replace('[PREVIOUS]', localeTextFunc('previous', 'Previous'))
+                    .replace('[NEXT]', localeTextFunc('next', 'Next'))
+                    .replace('[LAST]', localeTextFunc('last', 'Last'));
             };
             PaginationController.prototype.getGui = function () {
                 return this.eGui;
@@ -7056,15 +7015,41 @@ var awk;
                 var template;
                 if (!params.dontFill) {
                     if (this.fullHeight) {
-                        template = '<div style="height: 100%; overflow: auto; position: relative;">' + '<div id="west" style="height: 100%; float: left;"></div>' + '<div id="east" style="height: 100%; float: right;"></div>' + '<div id="center" style="height: 100%;"></div>' + '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' + '</div>';
+                        template =
+                            '<div style="height: 100%; overflow: auto; position: relative;">' +
+                                '<div id="west" style="height: 100%; float: left;"></div>' +
+                                '<div id="east" style="height: 100%; float: right;"></div>' +
+                                '<div id="center" style="height: 100%;"></div>' +
+                                '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' +
+                                '</div>';
                     }
                     else {
-                        template = '<div style="height: 100%; position: relative;">' + '<div id="north"></div>' + '<div id="centerRow" style="height: 100%; overflow: hidden;">' + '<div id="west" style="height: 100%; float: left;"></div>' + '<div id="east" style="height: 100%; float: right;"></div>' + '<div id="center" style="height: 100%;"></div>' + '</div>' + '<div id="south"></div>' + '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' + '</div>';
+                        template =
+                            '<div style="height: 100%; position: relative;">' +
+                                '<div id="north"></div>' +
+                                '<div id="centerRow" style="height: 100%; overflow: hidden;">' +
+                                '<div id="west" style="height: 100%; float: left;"></div>' +
+                                '<div id="east" style="height: 100%; float: right;"></div>' +
+                                '<div id="center" style="height: 100%;"></div>' +
+                                '</div>' +
+                                '<div id="south"></div>' +
+                                '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' +
+                                '</div>';
                     }
                     this.layoutActive = true;
                 }
                 else {
-                    template = '<div style="position: relative;">' + '<div id="north"></div>' + '<div id="centerRow">' + '<div id="west"></div>' + '<div id="east"></div>' + '<div id="center"></div>' + '</div>' + '<div id="south"></div>' + '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' + '</div>';
+                    template =
+                        '<div style="position: relative;">' +
+                            '<div id="north"></div>' +
+                            '<div id="centerRow">' +
+                            '<div id="west"></div>' +
+                            '<div id="east"></div>' +
+                            '<div id="center"></div>' +
+                            '</div>' +
+                            '<div id="south"></div>' +
+                            '<div id="overlay" style="position: absolute; height: 100%; width: 100%; top: 0px; left: 0px;"></div>' +
+                            '</div>';
                     this.layoutActive = false;
                 }
                 this.eGui = _.loadTemplate(template);
@@ -7211,11 +7196,36 @@ var awk;
 (function (awk) {
     var grid;
     (function (grid) {
-        var gridHtml = '<div>' + '<!-- header -->' + '<div class="ag-header">' + '<div class="ag-pinned-header"></div><div class="ag-header-viewport"><div class="ag-header-container"></div></div>' + '</div>' + '<!-- body -->' + '<div class="ag-body">' + '<div class="ag-pinned-cols-viewport">' + '<div class="ag-pinned-cols-container"></div>' + '</div>' + '<div class="ag-body-viewport-wrapper">' + '<div class="ag-body-viewport">' + '<div class="ag-body-container"></div>' + '</div>' + '</div>' + '</div>' + '</div>';
-        var gridNoScrollsHtml = '<div>' + '<!-- header -->' + '<div class="ag-header-container"></div>' + '<!-- body -->' + '<div class="ag-body-container"></div>' + '</div>';
+        var gridHtml = '<div>' +
+            '<!-- header -->' +
+            '<div class="ag-header">' +
+            '<div class="ag-pinned-header"></div><div class="ag-header-viewport"><div class="ag-header-container"></div></div>' +
+            '</div>' +
+            '<!-- body -->' +
+            '<div class="ag-body">' +
+            '<div class="ag-pinned-cols-viewport">' +
+            '<div class="ag-pinned-cols-container"></div>' +
+            '</div>' +
+            '<div class="ag-body-viewport-wrapper">' +
+            '<div class="ag-body-viewport">' +
+            '<div class="ag-body-container"></div>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        var gridNoScrollsHtml = '<div>' +
+            '<!-- header -->' +
+            '<div class="ag-header-container"></div>' +
+            '<!-- body -->' +
+            '<div class="ag-body-container"></div>' +
+            '</div>';
         // wrapping in outer div, and wrapper, is needed to center the loading icon
         // The idea for centering came from here: http://www.vanseodesign.com/css/vertical-centering/
-        var loadingHtml = '<div class="ag-loading-panel">' + '<div class="ag-loading-wrapper">' + '<span class="ag-loading-center">Loading...</span>' + '</div>' + '</div>';
+        var loadingHtml = '<div class="ag-loading-panel">' +
+            '<div class="ag-loading-wrapper">' +
+            '<span class="ag-loading-center">Loading...</span>' +
+            '</div>' +
+            '</div>';
         var utils = grid.Utils;
         var GridPanel = (function () {
             function GridPanel(gridOptionsWrapper) {
@@ -7288,13 +7298,15 @@ var awk;
                 }
                 var columns = this.columnModel.getDisplayedColumns();
                 if (typeof index !== 'number' || index < 0 || index >= columns.length) {
-                    console.warn('invalid col index for ensureColIndexVisible: ' + index + ', should be between 0 and ' + (columns.length - 1));
+                    console.warn('invalid col index for ensureColIndexVisible: ' + index
+                        + ', should be between 0 and ' + (columns.length - 1));
                     return;
                 }
                 var column = columns[index];
                 var pinnedColCount = this.gridOptionsWrapper.getPinnedColCount();
                 if (index < pinnedColCount) {
-                    console.warn('invalid col index for ensureColIndexVisible: ' + index + ', scrolling to a pinned col makes no sense');
+                    console.warn('invalid col index for ensureColIndexVisible: ' + index
+                        + ', scrolling to a pinned col makes no sense');
                     return;
                 }
                 // sum up all col width to the let to get the start pixel
@@ -7404,6 +7416,8 @@ var awk;
                 //some browsers had layout issues with the blank divs, so if blank,
                 //we don't display them
                 if (showingPinnedCols) {
+                    // this allows CSS to target specific elements on the grid when showing pinned cols
+                    utils.addCssClass(this.eRoot, 'ag-showing-pinned-cols');
                     this.ePinnedHeader.style.display = 'inline-block';
                     this.ePinnedColsViewport.style.display = 'inline';
                 }
@@ -7450,17 +7464,15 @@ var awk;
                     }
                     if (newTopPosition !== lastTopPosition) {
                         lastTopPosition = newTopPosition;
-                        _this.scrollPinned(newTopPosition);
+                        _this.ePinnedColsViewport.scrollTop = newTopPosition;
                         _this.requestDrawVirtualRows();
                     }
                     _this.masterSlaveService.fireHorizontalScrollEvent(newLeftPosition);
                 });
                 this.ePinnedColsViewport.addEventListener("scroll", function () {
-                    // this means the pinned panel was moved, which can only
-                    // happen when the user is navigating in the pinned container
-                    // as the pinned col should never scroll. so we rollback
-                    // the scroll on the pinned.
-                    _this.ePinnedColsViewport.scrollTop = 0;
+                    // update body viewport with current scroll position
+                    // this allows us to scroll on both pinned columns AND body
+                    _this.eBodyViewport.scrollTop = _this.ePinnedColsViewport.scrollTop;
                 });
             };
             GridPanel.prototype.requestDrawVirtualRows = function () {
@@ -7497,10 +7509,6 @@ var awk;
             GridPanel.prototype.scrollHeader = function (bodyLeftPosition) {
                 // this.eHeaderContainer.style.transform = 'translate3d(' + -bodyLeftPosition + "px,0,0)";
                 this.eHeaderContainer.style.left = -bodyLeftPosition + "px";
-            };
-            GridPanel.prototype.scrollPinned = function (bodyTopPosition) {
-                // this.ePinnedColsContainer.style.transform = 'translate3d(0,' + -bodyTopPosition + "px,0)";
-                this.ePinnedColsContainer.style.top = -bodyTopPosition + "px";
             };
             return GridPanel;
         })();
@@ -7601,7 +7609,12 @@ var awk;
         //var template = require('./agList.html');
         var utils = grid.Utils;
         var dragAndDropService = grid.DragAndDropService.getInstance();
-        var template = '<div class="ag-list-selection">' + '<div>' + '<div ag-repeat class="ag-list-item">' + '</div>' + '</div>' + '</div>';
+        var template = '<div class="ag-list-selection">' +
+            '<div>' +
+            '<div ag-repeat class="ag-list-item">' +
+            '</div>' +
+            '</div>' +
+            '</div>';
         var DropTargetLocation;
         (function (DropTargetLocation) {
             DropTargetLocation[DropTargetLocation["NOT_DROP_TARGET"] = 0] = "NOT_DROP_TARGET";
@@ -7786,10 +7799,10 @@ var awk;
                 var result = dragItem.data !== targetColumn && dragItem.containerId === this.uniqueId;
                 if (result) {
                     if (this.dragAfterThisItem(targetColumn, dragItem.data)) {
-                        this.setDropCssClasses(eListItem, 1 /* DROP_TARGET_ABOVE */);
+                        this.setDropCssClasses(eListItem, DropTargetLocation.DROP_TARGET_ABOVE);
                     }
                     else {
-                        this.setDropCssClasses(eListItem, 2 /* DROP_TARGET_BELOW */);
+                        this.setDropCssClasses(eListItem, DropTargetLocation.DROP_TARGET_BELOW);
                     }
                 }
                 return result;
@@ -7808,15 +7821,15 @@ var awk;
                 }
             };
             AgList.prototype.internalNoDrop = function (eListItem) {
-                this.setDropCssClasses(eListItem, 0 /* NOT_DROP_TARGET */);
+                this.setDropCssClasses(eListItem, DropTargetLocation.NOT_DROP_TARGET);
             };
             AgList.prototype.dragAfterThisItem = function (targetColumn, draggedColumn) {
                 return this.model.indexOf(targetColumn) < this.model.indexOf(draggedColumn);
             };
             AgList.prototype.setDropCssClasses = function (eListItem, state) {
-                utils.addOrRemoveCssClass(eListItem, 'ag-not-drop-target', state === 0 /* NOT_DROP_TARGET */);
-                utils.addOrRemoveCssClass(eListItem, 'ag-drop-target-above', state === 1 /* DROP_TARGET_ABOVE */);
-                utils.addOrRemoveCssClass(eListItem, 'ag-drop-target-below', state === 2 /* DROP_TARGET_BELOW */);
+                utils.addOrRemoveCssClass(eListItem, 'ag-not-drop-target', state === DropTargetLocation.NOT_DROP_TARGET);
+                utils.addOrRemoveCssClass(eListItem, 'ag-drop-target-above', state === DropTargetLocation.DROP_TARGET_ABOVE);
+                utils.addOrRemoveCssClass(eListItem, 'ag-drop-target-below', state === DropTargetLocation.DROP_TARGET_BELOW);
             };
             AgList.prototype.getGui = function () {
                 return this.eGui;
@@ -8033,7 +8046,7 @@ var awk;
             AgDropdownList.prototype.onClick = function () {
                 var agListGui = this.agList.getGui();
                 this.popupService.positionPopup(this.eGui, agListGui, -1);
-                this.hidePopupCallback = this.popupService.addAsModalPopup(agListGui);
+                this.hidePopupCallback = this.popupService.addAsModalPopup(agListGui, true);
             };
             AgDropdownList.prototype.getGui = function () {
                 return this.eGui;
@@ -8240,7 +8253,7 @@ var awk;
 var awk;
 (function (awk) {
     var grid;
-    (function (_grid) {
+    (function (grid_2) {
         var GridApi = (function () {
             function GridApi(grid, rowRenderer, headerRenderer, filterManager, columnController, inMemoryRowController, selectionController, gridOptionsWrapper, gridPanel, valueService, masterSlaveService) {
                 this.grid = grid;
@@ -8296,15 +8309,15 @@ var awk;
                 return this.grid.rowModel;
             };
             GridApi.prototype.onGroupExpandedOrCollapsed = function (refreshFromIndex) {
-                this.grid.updateModelAndRefresh(_grid.Constants.STEP_MAP, refreshFromIndex);
+                this.grid.updateModelAndRefresh(grid_2.Constants.STEP_MAP, refreshFromIndex);
             };
             GridApi.prototype.expandAll = function () {
                 this.inMemoryRowController.expandOrCollapseAll(true, null);
-                this.grid.updateModelAndRefresh(_grid.Constants.STEP_MAP);
+                this.grid.updateModelAndRefresh(grid_2.Constants.STEP_MAP);
             };
             GridApi.prototype.collapseAll = function () {
                 this.inMemoryRowController.expandOrCollapseAll(false, null);
-                this.grid.updateModelAndRefresh(_grid.Constants.STEP_MAP);
+                this.grid.updateModelAndRefresh(grid_2.Constants.STEP_MAP);
             };
             GridApi.prototype.addVirtualRowListener = function (rowIndex, callback) {
                 this.grid.addVirtualRowListener(rowIndex, callback);
@@ -8433,9 +8446,12 @@ var awk;
             GridApi.prototype.getValue = function (colDef, data, node) {
                 return this.valueService.getValue(colDef, data, node);
             };
+            GridApi.prototype.getColumnController = function () {
+                return this.columnController;
+            };
             return GridApi;
         })();
-        _grid.GridApi = GridApi;
+        grid_2.GridApi = GridApi;
     })(grid = awk.grid || (awk.grid = {}));
 })(awk || (awk = {}));
 /// <reference path="gridOptionsWrapper.ts" />
@@ -8826,7 +8842,9 @@ var awk;
                 }
                 // ctrlKey for windows, metaKey for Apple
                 var ctrlKeyPressed = event.ctrlKey || event.metaKey;
-                var doDeselect = ctrlKeyPressed && selectionController.isNodeSelected(node) && gridOptionsWrapper.isRowDeselection();
+                var doDeselect = ctrlKeyPressed
+                    && selectionController.isNodeSelected(node)
+                    && gridOptionsWrapper.isRowDeselection();
                 if (doDeselect) {
                     selectionController.deselectNode(node);
                 }
@@ -8870,6 +8888,7 @@ var awk;
                 var rowCount = this.rowModel.getVirtualRowCount();
                 var comparatorIsAFunction = typeof comparator === 'function';
                 var indexToSelect = -1;
+                // go through all the nodes, find the one we want to show
                 for (var i = 0; i < rowCount; i++) {
                     var node = this.rowModel.getVirtualRow(i);
                     if (comparatorIsAFunction) {
@@ -8938,7 +8957,9 @@ var awk;
                     if (sortModelProvided && !column.colDef.suppressSorting) {
                         for (var j = 0; j < sortModel.length; j++) {
                             var sortModelEntry = sortModel[j];
-                            if (typeof sortModelEntry.field === 'string' && typeof column.colDef.field === 'string' && sortModelEntry.field === column.colDef.field) {
+                            if (typeof sortModelEntry.field === 'string'
+                                && typeof column.colDef.field === 'string'
+                                && sortModelEntry.field === column.colDef.field) {
                                 sortForCol = sortModelEntry.sort;
                                 sortedAt = j;
                             }
