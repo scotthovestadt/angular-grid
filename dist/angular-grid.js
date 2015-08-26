@@ -7437,13 +7437,6 @@ var awk;
                     this.eBody.style['paddingTop'] = headerHeightPixels;
                 }
             };
-            // see if a grey box is needed at the bottom of the pinned col
-            GridPanel.prototype.setPinnedColHeight = function () {
-                if (!this.forPrint) {
-                    var bodyHeight = this.eBodyViewport.offsetHeight;
-                    this.ePinnedColsViewport.style.height = bodyHeight + "px";
-                }
-            };
             GridPanel.prototype.setHorizontalScrollPosition = function (hScrollPosition) {
                 this.eBodyViewport.scrollLeft = hScrollPosition;
             };
@@ -9037,13 +9030,12 @@ var awk;
                 this.gridPanel.setPinnedColContainerWidth();
             };
             Grid.prototype.doLayout = function () {
-                // need to do layout first, as drawVirtualRows and setPinnedColHeight
+                // need to do layout first, as drawVirtualRows
                 // need to know the result of the resizing of the panels.
                 var sizeChanged = this.eRootPanel.doLayout();
                 // both of the two below should be done in gridPanel, the gridPanel should register 'resize' to the panel
                 if (sizeChanged) {
                     this.rowRenderer.drawVirtualRows();
-                    this.gridPanel.setPinnedColHeight();
                 }
             };
             return Grid;

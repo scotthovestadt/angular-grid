@@ -133,7 +133,7 @@
 .ag-pinned-cols-viewport {
   float: left;
   position: absolute;
-  overflow-x: scroll;
+  overflow-x: hidden;
   overflow-y: scroll;
   height: 100%;
   padding-right: 25px;
